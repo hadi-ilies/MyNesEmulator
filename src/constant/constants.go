@@ -3,6 +3,10 @@ package constant
 // constants.go file
 
 const (
-	exitSuccess = 0
-	exitFailure = 1
+	ExitSuccess = 0
+	ExitFailure = 1
 )
+
+func Lol() string {
+	return "LOOOL"
+}
