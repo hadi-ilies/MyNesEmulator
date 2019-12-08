@@ -12,23 +12,6 @@ const (
 	N = 1 << 7 // Negative , Decimal value 128
 )
 
-// addressing modes
-const (
-	modeAbsolute = iota + 1 //iota allow variable to work like enum in c "auto incrementation"
-	modeAbsoluteX
-	modeAbsoluteY
-	modeAccumulator
-	modeImmediate
-	modeImplied
-	modeIndexedIndirect
-	modeIndirect
-	modeIndirectIndexed
-	modeRelative
-	modeZeroPage
-	modeZeroPageX
-	modeZeroPageY
-)
-
 //instruction of addr modes
 type addrModes func()
 
@@ -78,6 +61,206 @@ func zeroPageX() {
 
 func zeroPageY() {
 
+}
+
+// addressing modes
+const (
+	modeAbsolute = iota + 1 //iota allow variable to work like enum in c "auto incrementation"
+	modeAbsoluteX
+	modeAbsoluteY
+	modeAccumulator
+	modeImmediate
+	modeImplied
+	modeIndexedIndirect
+	modeIndirect
+	modeIndirectIndexed
+	modeRelative
+	modeZeroPage
+	modeZeroPageX
+	modeZeroPageY
+)
+
+//OPCODE MATRIX look doc page 11
+type opCode struct {
+	instructionName string
+	instructionMode byte
+	instructionSize uint16
+	nbCycle         uint16
+}
+
+var opCodeMatrix = [256]opCode{
+	opCode{
+		instructionName: "BRK",
+		instructionMode: modeImplied,
+		instructionSize: 2,
+		nbCycle:         7,
+	},
+	opCode{
+		instructionName: "ORA",
+		instructionMode: modeIndexedIndirect,
+		instructionSize: 2,
+		nbCycle:         6,
+	}, opCode{
+		instructionName: "LOL",
+		instructionMode: modeImplied,
+		instructionSize: 0,
+		nbCycle:         2,
+	}, opCode{
+		instructionName: "LOL",
+		instructionMode: modeIndexedIndirect,
+		instructionSize: 0,
+		nbCycle:         8,
+	}, opCode{
+		instructionName: "NOP", //new op code
+		instructionMode: modeZeroPage,
+		instructionSize: 2,
+		nbCycle:         3,
+	}, opCode{
+		instructionName: "ORA",
+		instructionMode: modeZeroPage,
+		instructionSize: 2,
+		nbCycle:         3,
+	}, opCode{
+		instructionName: "ASL",
+		instructionMode: modeZeroPage,
+		instructionSize: 2,
+		nbCycle:         5,
+	}, opCode{
+		instructionName: "SLO",
+		instructionMode: modeZeroPage,
+		instructionSize: 2,
+		nbCycle:         5,
+	}, opCode{
+		instructionName: "PHP",
+		instructionMode: modeImplied,
+		instructionSize: 1,
+		nbCycle:         3,
+	}, opCode{
+		instructionName: "ORA",
+		instructionMode: modeImmediate,
+		instructionSize: 2,
+		nbCycle:         2,
+	}, opCode{ // i have to finish this tomorrow
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "BRK",
+		instructionMode: 6,
+		instructionSize: 2,
+		nbCycle:         7,
+	},
 }
 
 //THE CPU
