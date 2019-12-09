@@ -503,11 +503,177 @@ var opCodeMatrix = [256]opCode{
 		nbCycle:         6,
 	},
 
+	// new line
+	opCode{
+		instructionName: "BVC",
+		instructionMode: modeRelative,
+		instructionSize: 2,
+		nbCycle:         2,
+	}, opCode{
+		instructionName: "EOR",
+		instructionMode: modeIndirectIndexed,
+		instructionSize: 2,
+		nbCycle:         5,
+	}, opCode{
+		instructionName: "KIL",
+		instructionMode: modeImplied,
+		instructionSize: 0,
+		nbCycle:         2,
+	}, opCode{
+		instructionName: "SRE",
+		instructionMode: modeIndirectIndexed,
+		instructionSize: 0,
+		nbCycle:         8,
+	}, opCode{
+		instructionName: "NOP", //new op code
+		instructionMode: modeZeroPageX,
+		instructionSize: 2,
+		nbCycle:         4,
+	}, opCode{
+		instructionName: "EOR",
+		instructionMode: modeZeroPageX,
+		instructionSize: 2,
+		nbCycle:         4,
+	}, opCode{
+		instructionName: "LSR",
+		instructionMode: modeZeroPageX,
+		instructionSize: 2,
+		nbCycle:         6,
+	}, opCode{
+		instructionName: "SRE",
+		instructionMode: modeZeroPageX,
+		instructionSize: 0,
+		nbCycle:         6,
+	}, opCode{
+		instructionName: "CLI",
+		instructionMode: modeImplied,
+		instructionSize: 1,
+		nbCycle:         2,
+	}, opCode{
+		instructionName: "EOR",
+		instructionMode: modeImmediate,
+		instructionSize: 3,
+		nbCycle:         4,
+	}, opCode{
+		instructionName: "NOP",
+		instructionMode: modeImplied,
+		instructionSize: 1,
+		nbCycle:         2,
+	}, opCode{
+		instructionName: "SRE",
+		instructionMode: modeAccumulator,
+		instructionSize: 0,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "NOP",
+		instructionMode: modeAbsoluteX,
+		instructionSize: 3,
+		nbCycle:         4,
+	}, opCode{
+		instructionName: "EOR",
+		instructionMode: modeAbsoluteX,
+		instructionSize: 3,
+		nbCycle:         4,
+	}, opCode{
+		instructionName: "LSR",
+		instructionMode: modeAbsoluteX,
+		instructionSize: 3,
+		nbCycle:         7,
+	}, opCode{
+		instructionName: "SRE",
+		instructionMode: modeZeroPageX,
+		instructionSize: 0,
+		nbCycle:         7,
+	},
+
 	//new line
-	//name
-	//mode
-	//size
-	//cycles
+	opCode{
+		instructionName: "RTS",
+		instructionMode: modeImplied,
+		instructionSize: 1,
+		nbCycle:         6,
+	}, opCode{
+		instructionName: "ADC",
+		instructionMode: modeIndexedIndirect,
+		instructionSize: 2,
+		nbCycle:         6,
+	}, opCode{
+		instructionName: "KIL",
+		instructionMode: modeImplied,
+		instructionSize: 0,
+		nbCycle:         2,
+	}, opCode{
+		instructionName: "RRA",
+		instructionMode: modeIndexedIndirect,
+		instructionSize: 0,
+		nbCycle:         8,
+	}, opCode{
+		instructionName: "NOP", //new op code
+		instructionMode: modeZeroPageX,
+		instructionSize: 2,
+		nbCycle:         3,
+	}, opCode{
+		instructionName: "ADC",
+		instructionMode: modeZeroPageX,
+		instructionSize: 2,
+		nbCycle:         3,
+	}, opCode{
+		instructionName: "ROR",
+		instructionMode: modeZeroPageX,
+		instructionSize: 2,
+		nbCycle:         5,
+	}, opCode{
+		instructionName: "RRA",
+		instructionMode: modeZeroPageX,
+		instructionSize: 0,
+		nbCycle:         5,
+	}, opCode{
+		instructionName: "PLA",
+		instructionMode: modeImplied,
+		instructionSize: 1,
+		nbCycle:         4,
+	}, opCode{
+		instructionName: "ADC",
+		instructionMode: modeImmediate,
+		instructionSize: 2,
+		nbCycle:         2,
+	}, opCode{ // i have to finish this tomorrow
+		instructionName: "ROR",
+		instructionMode: modeAccumulator,
+		instructionSize: 1,
+		nbCycle:         2,
+	}, opCode{
+		instructionName: "ARR",
+		instructionMode: modeImmediate,
+		instructionSize: 0,
+		nbCycle:         2,
+	}, opCode{
+		instructionName: "JMP",
+		instructionMode: modeIndirect,
+		instructionSize: 3,
+		nbCycle:         5,
+	}, opCode{
+		instructionName: "ADC",
+		instructionMode: modeAbsolute,
+		instructionSize: 3,
+		nbCycle:         4,
+	}, opCode{
+		instructionName: "ROR",
+		instructionMode: modeAbsolute,
+		instructionSize: 3,
+		nbCycle:         6,
+	}, opCode{
+		instructionName: "RRA",
+		instructionMode: modeAbsolute,
+		instructionSize: 0,
+		nbCycle:         6,
+	},
+
+	//new line
+	//name 		"BVS", "ADC", "KIL", "RRA", "NOP", "ADC", "ROR", "RRA", "SEI", "ADC", "NOP", "RRA", "NOP", "ADC", "ROR", "RRA",
+	//mode 			10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+	//size 			2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+	//cycles			2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
 
 }
 
