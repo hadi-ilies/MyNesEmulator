@@ -15,6 +15,10 @@ const (
 //instruction of addr modes
 type addrModes func()
 
+func abs() {
+
+}
+
 func absX() {
 
 }
@@ -132,8 +136,29 @@ type CPU struct {
 	//table     [256]func(*stepInfo)
 }
 
+func createModesTables() map[int32]addrModes {
+	modes := map[int32]addrModes{
+		modeAbsolute:        abs,
+		modeAbsoluteX:       absX,
+		modeAbsoluteY:       absY,
+		modeAccumulator:     accumulator,
+		modeImmediate:       immediate,
+		modeImplied:         implied,
+		modeIndexedIndirect: indexedIndirect,
+		modeIndirect:        indirect,
+		modeIndirectIndexed: indirectIndexed,
+		modeRelative:        relative,
+		modeZeroPage:        zeroPage,
+		modeZeroPageX:       zeroPageX,
+		modeZeroPageY:       zeroPageY,
+	}
+	return modes
+}
+
 func CreateCpu() *CPU {
-	var cpu CPU = CPU{}
+	cpu := CPU{}
+
+	cpu.modes = createModesTables()
 
 	return &cpu
 }
