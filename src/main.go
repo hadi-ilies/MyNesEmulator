@@ -37,6 +37,7 @@ func usage(exitValue int, message string) {
 	}
 	println("USAGE:")
 	println("\t" + execName + " NES_ROM_PATH")
+	println("NES_ROM_PATH " + "the path of your nes game")
 	os.Exit(exitValue)
 }
 
