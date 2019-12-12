@@ -13,57 +13,57 @@ const (
 )
 
 //instruction of addr modes
-type addrModes func()
+type addrModes func(op *opCode)
 
-func abs() {
-
-}
-
-func absX() {
+func abs(op *opCode) {
 
 }
 
-func absY() {
+func absX(op *opCode) {
 
 }
 
-func accumulator() {
+func absY(op *opCode) {
 
 }
 
-func immediate() {
+func accumulator(op *opCode) {
 
 }
 
-func implied() {
+func immediate(op *opCode) {
 
 }
 
-func indexedIndirect() {
+func implied(op *opCode) {
 
 }
 
-func indirect() {
+func indexedIndirect(op *opCode) {
 
 }
 
-func indirectIndexed() {
+func indirect(op *opCode) {
 
 }
 
-func relative() {
+func indirectIndexed(op *opCode) {
 
 }
 
-func zeroPage() {
+func relative(op *opCode) {
 
 }
 
-func zeroPageX() {
+func zeroPage(op *opCode) {
 
 }
 
-func zeroPageY() {
+func zeroPageX(op *opCode) {
+
+}
+
+func zeroPageY(op *opCode) {
 
 }
 
@@ -115,7 +115,7 @@ var opCodeMatrix = [256]opCode{
 //THE CPU
 
 type CPU struct {
-	//Memory                        // memory interface
+	//Memory                      // memory interface
 	Cycles    uint64              // number of cycles
 	PC        uint16              // program counter
 	SP        byte                // stack pointer
@@ -161,4 +161,10 @@ func CreateCpu() *CPU {
 	cpu.modes = createModesTables()
 
 	return &cpu
+}
+
+// Step executes a single CPU instruction
+func (cpu *CPU) Step() bool {
+
+	return false
 }
