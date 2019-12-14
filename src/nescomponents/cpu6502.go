@@ -225,16 +225,21 @@ func bmi(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 	}
 }
 
+// set carry
+// SEC - Set Carry Flag
 func sec(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
+	cpu.C = 1
 }
 
 func rti(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
+// EOR - Exclusive OR
 func eor(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
+	cpu.A = cpu.A ^ cpu.bus.Read(address)
+	cpu.setZ(cpu.A)
+	cpu.setN(cpu.A)
 }
 
 func lsr(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
@@ -382,8 +387,10 @@ func arr(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
+// Instruction: Jump To Location
+// Function:    pc = address
 func jmp(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
+	cpu.PC = address
 }
 
 // Instruction: Branch if Overflow Set
@@ -408,35 +415,47 @@ func rra(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
+// SEI - Set Interrupt Disable
 func sei(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
+	cpu.I = 1
 }
 
+// STA - Store Accumulator
 func sta(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
+	cpu.bus.Write(address, cpu.A)
 }
 
 func sax(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func dey(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+//DEY - Decrement Y Register
 
+func dey(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	cpu.Y--
+	cpu.setZ(cpu.Y)
+	cpu.setN(cpu.Y)
 }
 
+// TXA - Transfer X register to Accumulator
 func txa(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
+	cpu.A = cpu.X
+	cpu.setZ(cpu.A)
+	cpu.setN(cpu.A)
 }
 
 func xaa(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
+// STY - Store Y Register
 func sty(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
+	cpu.bus.Write(address, cpu.Y)
 }
 
+// STX - Store X Register
 func stx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	cpu.bus.Write(address, cpu.X)
 
 }
 
@@ -462,16 +481,22 @@ func ahx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
+//transfer y register to Accumulator
 func tya(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	cpu.A = cpu.Y
+	cpu.setZ(cpu.A)
+	cpu.setN(cpu.A)
 
 }
 
+//TXS transfer X register to stack pointer
 func txs(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
+	cpu.SP = cpu.X
 }
 
+//TAS transfer accumulator to stack pointer
 func tas(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
+	cpu.SP = cpu.A
 }
 
 func shy(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
@@ -482,15 +507,25 @@ func shx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
+// LDY - Load Y Register
 func ldy(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
+	cpu.Y = cpu.bus.Read(address)
+	cpu.setZ(cpu.Y)
+	cpu.setN(cpu.Y)
 }
 
+// LDA - Load Accumulator
 func lda(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
+	cpu.A = cpu.bus.Read(address)
+	cpu.setZ(cpu.A)
+	cpu.setN(cpu.A)
 }
 
+// LDX - Load X Register
 func ldx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	cpu.X = cpu.bus.Read(address)
+	cpu.setZ(cpu.X)
+	cpu.setN(cpu.X)
 
 }
 
@@ -498,12 +533,18 @@ func lax(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
+// TAY - Transfer Accumulator to Y register
 func tay(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
+	cpu.Y = cpu.A
+	cpu.setZ(cpu.Y)
+	cpu.setN(cpu.Y)
 }
 
+// TAX - Transfer Accumulator to X register
 func tax(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
+	cpu.X = cpu.A
+	cpu.setZ(cpu.X)
+	cpu.setN(cpu.X)
 }
 
 // Instruction: Branch if Carry Set
@@ -531,32 +572,69 @@ func clv(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 	cpu.V = 0
 }
 
+//TSX transfer stackpointer to X register
 func tsx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
+	cpu.X = cpu.SP
+	cpu.setZ(cpu.X)
+	cpu.setN(cpu.X)
 }
 
 func las(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
+// Instruction: Compare Y Register
+// Function:    C <- Y >= M      Z <- (Y - M) == 0
+// Flags Out:   N, C, Z
 func cpy(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	var value byte = cpu.bus.Read(address)
+
+	cpu.setZ(cpu.Y - value)
+	cpu.setN(cpu.Y - value)
+	if cpu.Y >= value {
+		cpu.C = 1
+	} else {
+		cpu.C = 0
+	}
 
 }
 
+// Instruction: Compare Accumulator
+// Function:    C <- A >= M      Z <- (A - M) == 0
+// Flags Out:   N, C, Z
 func cmp(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	var value byte = cpu.bus.Read(address)
 
+	cpu.setZ(cpu.A - value)
+	cpu.setN(cpu.A - value)
+	if cpu.A >= value {
+		cpu.C = 1
+	} else {
+		cpu.C = 0
+	}
 }
 
+// DEC - Decrement Memory
 func dec(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	var decAddr byte = cpu.bus.Read(address) - 1
 
+	cpu.bus.Write(address, decAddr)
+	cpu.setZ(decAddr)
+	cpu.setN(decAddr)
 }
 
+// INY - Increment Y Register
 func iny(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
+	cpu.Y++
+	cpu.setZ(cpu.Y)
+	cpu.setN(cpu.Y)
 }
 
+// DEX - Decrement X Register
 func dex(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
+	cpu.X--
+	cpu.setZ(cpu.X)
+	cpu.setN(cpu.X)
 }
 
 func axs(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
@@ -592,20 +670,40 @@ func cld(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 	cpu.D = 0
 }
 
+// Instruction: Compare X Register
+// Function:    C <- X >= M      Z <- (X - M) == 0
+// Flags Out:   N, C, Z
 func cpx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	var value byte = cpu.bus.Read(address)
 
+	cpu.setZ(cpu.X - value)
+	cpu.setN(cpu.X - value)
+	if cpu.X >= value {
+		cpu.C = 1
+	} else {
+		cpu.C = 0
+	}
 }
 
 func isc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
+// INC - Increment Memory
 func inc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	var incAddr byte = cpu.bus.Read(address) + 1
 
+	cpu.bus.Write(address, incAddr)
+
+	cpu.setZ(incAddr)
+	cpu.setN(incAddr)
 }
 
+// INX - Increment X Register
 func inx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
+	cpu.X++
+	cpu.setZ(cpu.X)
+	cpu.setN(cpu.X)
 }
 
 // Instruction: Subtraction with Borrow In
@@ -673,8 +771,10 @@ func beq(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 	}
 }
 
-func sed(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+// SED - Set Decimal Flag
 
+func sed(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	cpu.D = 1
 }
 
 func asl(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
