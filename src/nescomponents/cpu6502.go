@@ -153,8 +153,11 @@ func bpl(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 	}
 }
 
+//carry clear
+// Instruction: Clear Carry Flag
+// Function:    C = 0
 func clc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
+	cpu.C = 0
 }
 
 func jsr(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
@@ -252,8 +255,10 @@ func sre(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
+// Instruction: Disable Interrupts / Clear Interrupt Flag
+// Function:    I = 0
 func cli(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
+	cpu.I = 0
 }
 
 func rts(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
@@ -496,8 +501,10 @@ func bcs(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
+// Instruction: Clear Overflow Flag
+// Function:    V = 0
 func clv(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
+	cpu.V = 0
 }
 
 func tsx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
@@ -555,8 +562,10 @@ func dcp(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
+// Instruction: Clear decimal Flag
+// Function:    D = 0
 func cld(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
+	cpu.D = 0
 }
 
 func cpx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
