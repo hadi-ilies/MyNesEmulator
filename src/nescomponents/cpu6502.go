@@ -21,7 +21,7 @@ func (cpu *CPU) Read16(address uint16) uint16 {
 }
 
 //function that corespond to the execution of an instruction
-type execinstructions func(address uint16, pc uint16, isAnAccumulator bool)
+type execinstructions func(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool)
 
 //_____________________________________________________________________________________________________________________
 
@@ -106,310 +106,571 @@ func zeroPageY(cpu *CPU) uint16 {
 	return address
 }
 
-//_____________________________________________________________________________________________________________________________
+//___________________________________________________ instructions functions__________________________________________________________________
 
-// instructions functions
-func brk(address uint16, pc uint16, isAnAccumulator bool) {
+// break instruction
+func brk(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func ora(address uint16, pc uint16, isAnAccumulator bool) {
+func ora(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func kil(address uint16, pc uint16, isAnAccumulator bool) {
+func kil(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func slo(address uint16, pc uint16, isAnAccumulator bool) {
+func slo(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func nop(address uint16, pc uint16, isAnAccumulator bool) {
+func nop(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func php(address uint16, pc uint16, isAnAccumulator bool) {
+func php(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func bpl(address uint16, pc uint16, isAnAccumulator bool) {
+//branch if position
+// Instruction: Branch if Positive
+// Function:    if(N == 0) pc = address
+func bpl(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	if cpu.N == 0 {
+		cpu.PC = address
+		// adds a cycle for taking a branch and adds another cycle
+		// if the branch jumps to a new page
+		cpu.Cycles++
+		addrAbs := pc + address
 
+		//if the two addresses reference different pages
+		if (addrAbs & 0xFF00) != (pc & 0xFF00) {
+			cpu.Cycles++
+		}
+		//pc = addrAbs //Todo should i save the new addr ???
+
+	}
 }
 
-func clc(address uint16, pc uint16, isAnAccumulator bool) {
+func clc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func jsr(address uint16, pc uint16, isAnAccumulator bool) {
+func jsr(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func and(address uint16, pc uint16, isAnAccumulator bool) {
-
+//this instruction is simply an 'and' logic gate
+func and(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	cpu.A &= cpu.bus.Read(address)
+	cpu.setZ(cpu.A)
+	cpu.setN(cpu.A)
 }
 
-func rla(address uint16, pc uint16, isAnAccumulator bool) {
+func rla(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func rol(address uint16, pc uint16, isAnAccumulator bool) {
+func rol(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func plp(address uint16, pc uint16, isAnAccumulator bool) {
+func plp(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func anc(address uint16, pc uint16, isAnAccumulator bool) {
+func anc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
+
+//branch if minus
+//Instruction: Branch if Negative
+// Function:    if(N == 1) pc = address
+func bmi(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	if cpu.N == 1 {
+		cpu.PC = address
+		// adds a cycle for taking a branch and adds another cycle
+		// if the branch jumps to a new page
+		cpu.Cycles++
+		addrAbs := pc + address
 
-func bmi(address uint16, pc uint16, isAnAccumulator bool) {
+		//if the two addresses reference different pages
+		if (addrAbs & 0xFF00) != (pc & 0xFF00) {
+			cpu.Cycles++
+		}
+		//pc = addrAbs //Todo should i save the new addr ???
 
+	}
 }
 
-func sec(address uint16, pc uint16, isAnAccumulator bool) {
+func sec(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func rti(address uint16, pc uint16, isAnAccumulator bool) {
+func rti(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func eor(address uint16, pc uint16, isAnAccumulator bool) {
+func eor(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func lsr(address uint16, pc uint16, isAnAccumulator bool) {
+func lsr(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func pha(address uint16, pc uint16, isAnAccumulator bool) {
+func pha(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func alr(address uint16, pc uint16, isAnAccumulator bool) {
+func alr(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func bvc(address uint16, pc uint16, isAnAccumulator bool) {
+//branch if overflowe clear
+// Instruction: Branch if Overflow Clear
+// Function:    if(V == 0) pc = address
+func bvc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	if cpu.V == 0 {
+		cpu.PC = address
+		// adds a cycle for taking a branch and adds another cycle
+		// if the branch jumps to a new page
+		cpu.Cycles++
+		addrAbs := pc + address
+
+		//if the two addresses reference different pages
+		if (addrAbs & 0xFF00) != (pc & 0xFF00) {
+			cpu.Cycles++
+		}
+		//pc = addrAbs //Todo should i save the new addr ???
 
+	}
 }
 
-func sre(address uint16, pc uint16, isAnAccumulator bool) {
+func sre(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func cli(address uint16, pc uint16, isAnAccumulator bool) {
+func cli(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func rts(address uint16, pc uint16, isAnAccumulator bool) {
+func rts(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func adc(address uint16, pc uint16, isAnAccumulator bool) {
+// Instruction: Add with Carry In
+// Function:    A = A + M + C
+// Flags Out:   C, V, N, Z
+//
+// Explanation:
+// The purpose of this function is to add a value to the accumulator and a carry bit. If
+// the result is > 255 there is an overflow setting the carry bit. Ths allows you to
+// chain together ADC instructions to add numbers larger than 8-bits. This in itself is
+// simple, however the 6502 supports the concepts of Negativity/Positivity and Signed Overflow.
+//
+// 10000100 = 128 + 4 = 132 in normal circumstances, we know this as unsigned and it allows
+// us to represent numbers between 0 and 255 (given 8 bits). The 6502 can also interpret
+// this word as something else if we assume those 8 bits represent the range -128 to +127,
+// i.e. it has become signed.
+//
+// Since 132 > 127, it effectively wraps around, through -128, to -124. This wraparound is
+// called overflow, and this is a useful to know as it indicates that the calculation has
+// gone outside the permissable range, and therefore no longer makes numeric sense.
+//
+// Note the implementation of ADD is the same in binary, this is just about how the numbers
+// are represented, so the word 10000100 can be both -124 and 132 depending upon the
+// context the programming is using it in. We can prove this!
+//
+//  10000100 =  132  or  -124
+// +00010001 = + 17      + 17
+//  ========    ===       ===     See, both are valid additions, but our interpretation of
+//  10010101 =  149  or  -107     the context changes the value, not the hardware!
+//
+// In principle under the -128 to 127 range:
+// 10000000 = -128, 11111111 = -1, 00000000 = 0, 00000000 = +1, 01111111 = +127
+// therefore negative numbers have the most significant set, positive numbers do not
+//
+// To assist us, the 6502 can set the overflow flag, if the result of the addition has
+// wrapped around. V <- ~(A^M) & A^(A+M+C) :D lol, let's work out why!
+//
+// Let's suppose we have A = 30, M = 10 and C = 0
+//          A = 30 = 00011110
+//          M = 10 = 00001010+
+//     RESULT = 40 = 00101000
+//
+// Here we have not gone out of range. The resulting significant bit has not changed.
+// So let's make a truth table to understand when overflow has occurred. Here I take
+// the MSB of each component, where R is RESULT.
+//
+// A  M  R | V | A^R | A^M |~(A^M) |
+// 0  0  0 | 0 |  0  |  0  |   1   |
+// 0  0  1 | 1 |  1  |  0  |   1   |
+// 0  1  0 | 0 |  0  |  1  |   0   |
+// 0  1  1 | 0 |  1  |  1  |   0   |  so V = ~(A^M) & (A^R)
+// 1  0  0 | 0 |  1  |  1  |   0   |
+// 1  0  1 | 0 |  0  |  1  |   0   |
+// 1  1  0 | 1 |  1  |  0  |   1   |
+// 1  1  1 | 0 |  0  |  0  |   1   |
+//
+// We can see how the above equation calculates V, based on A, M and R. V was chosen
+// based on the following hypothesis:
+//       Positive Number + Positive Number = Negative Result -> Overflow
+//       Negative Number + Negative Number = Positive Result -> Overflow
+//       Positive Number + Negative Number = Either Result -> Cannot Overflow
+//       Positive Number + Positive Number = Positive Result -> OK! No Overflow
+//       Negative Number + Negative Number = Negative Result -> OK! NO Overflow
+func adc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	var a byte = cpu.A
+	var m byte = cpu.bus.Read(address)
+	var c byte = cpu.C
 
+	cpu.A = a + m + c
+	cpu.setZ(cpu.A)
+	cpu.setN(cpu.A)
+	if cpu.A > 0xFF {
+		cpu.C = 1
+	} else {
+		cpu.C = 0
+	}
+	if (a^m)&0x80 == 0 && (a^cpu.A)&0x80 == 1 { //!= 0 {
+		cpu.V = 1
+	} else {
+		cpu.V = 0
+	}
 }
 
-func ror(address uint16, pc uint16, isAnAccumulator bool) {
+func ror(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func pla(address uint16, pc uint16, isAnAccumulator bool) {
+func pla(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func arr(address uint16, pc uint16, isAnAccumulator bool) {
+func arr(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func jmp(address uint16, pc uint16, isAnAccumulator bool) {
+func jmp(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func bvs(address uint16, pc uint16, isAnAccumulator bool) {
+// Instruction: Branch if Overflow Set
+// Function:    if(V == 1) pc = address
+func bvs(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	if cpu.V == 1 {
+		cpu.PC = address
+		// adds a cycle for taking a branch and adds another cycle
+		// if the branch jumps to a new page
+		cpu.Cycles++
+		addrAbs := pc + address
 
+		//if the two addresses reference different pages
+		if (addrAbs & 0xFF00) != (pc & 0xFF00) {
+			cpu.Cycles++
+		}
+		//pc = addrAbs //Todo should i save the new addr ???
+	}
 }
 
-func rra(address uint16, pc uint16, isAnAccumulator bool) {
+func rra(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func sei(address uint16, pc uint16, isAnAccumulator bool) {
+func sei(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func sta(address uint16, pc uint16, isAnAccumulator bool) {
+func sta(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func sax(address uint16, pc uint16, isAnAccumulator bool) {
+func sax(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func dey(address uint16, pc uint16, isAnAccumulator bool) {
+func dey(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func txa(address uint16, pc uint16, isAnAccumulator bool) {
+func txa(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func xaa(address uint16, pc uint16, isAnAccumulator bool) {
+func xaa(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func sty(address uint16, pc uint16, isAnAccumulator bool) {
+func sty(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func stx(address uint16, pc uint16, isAnAccumulator bool) {
+func stx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func bcc(address uint16, pc uint16, isAnAccumulator bool) {
+//this function branch if the carry is clear
+func bcc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	if cpu.C == 0 {
+		cpu.PC = address
+		// adds a cycle for taking a branch and adds another cycle
+		// if the branch jumps to a new page
+		cpu.Cycles++
+		addrAbs := pc + address
 
+		//if the two addresses reference different pages
+		if (addrAbs & 0xFF00) != (pc & 0xFF00) {
+			cpu.Cycles++
+		}
+		//pc = addrAbs //Todo should i save the new addr ???
+
+	}
 }
 
-func ahx(address uint16, pc uint16, isAnAccumulator bool) {
+func ahx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func tya(address uint16, pc uint16, isAnAccumulator bool) {
+func tya(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func txs(address uint16, pc uint16, isAnAccumulator bool) {
+func txs(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func tas(address uint16, pc uint16, isAnAccumulator bool) {
+func tas(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func shy(address uint16, pc uint16, isAnAccumulator bool) {
+func shy(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func shx(address uint16, pc uint16, isAnAccumulator bool) {
+func shx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func ldy(address uint16, pc uint16, isAnAccumulator bool) {
+func ldy(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func lda(address uint16, pc uint16, isAnAccumulator bool) {
+func lda(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func ldx(address uint16, pc uint16, isAnAccumulator bool) {
+func ldx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func lax(address uint16, pc uint16, isAnAccumulator bool) {
+func lax(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func tay(address uint16, pc uint16, isAnAccumulator bool) {
+func tay(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func tax(address uint16, pc uint16, isAnAccumulator bool) {
+func tax(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func bcs(address uint16, pc uint16, isAnAccumulator bool) {
+// Instruction: Branch if Carry Set
+// Function:    if(C == 1) pc = address
+func bcs(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	if cpu.C == 1 {
+		cpu.PC = address
+		// adds a cycle for taking a branch and adds another cycle
+		// if the branch jumps to a new page
+		cpu.Cycles++
+		addrAbs := pc + address
 
+		//if the two addresses reference different pages
+		if (addrAbs & 0xFF00) != (pc & 0xFF00) {
+			cpu.Cycles++
+		}
+		//pc = addrAbs //Todo should i save the new addr ???
+	}
+
 }
 
-func clv(address uint16, pc uint16, isAnAccumulator bool) {
+func clv(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func tsx(address uint16, pc uint16, isAnAccumulator bool) {
+func tsx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func las(address uint16, pc uint16, isAnAccumulator bool) {
+func las(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func cpy(address uint16, pc uint16, isAnAccumulator bool) {
+func cpy(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func cmp(address uint16, pc uint16, isAnAccumulator bool) {
+func cmp(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func dec(address uint16, pc uint16, isAnAccumulator bool) {
+func dec(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func iny(address uint16, pc uint16, isAnAccumulator bool) {
+func iny(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func dex(address uint16, pc uint16, isAnAccumulator bool) {
+func dex(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func axs(address uint16, pc uint16, isAnAccumulator bool) {
+func axs(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func bne(address uint16, pc uint16, isAnAccumulator bool) {
+//branch if not equal
+// Instruction: Branch if Not Equal
+// Function:    if(Z == 0) pc = address
+func bne(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	if Z == 0 {
+		cpu.PC = address
+		// adds a cycle for taking a branch and adds another cycle
+		// if the branch jumps to a new page
+		cpu.Cycles++
+		addrAbs := pc + address
 
+		//if the two addresses reference different pages
+		if (addrAbs & 0xFF00) != (pc & 0xFF00) {
+			cpu.Cycles++
+		}
+		//pc = addrAbs //Todo should i save the new addr ???
+	}
 }
 
-func dcp(address uint16, pc uint16, isAnAccumulator bool) {
+func dcp(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func cld(address uint16, pc uint16, isAnAccumulator bool) {
+func cld(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func cpx(address uint16, pc uint16, isAnAccumulator bool) {
+func cpx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func isc(address uint16, pc uint16, isAnAccumulator bool) {
+func isc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func inc(address uint16, pc uint16, isAnAccumulator bool) {
+func inc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func inx(address uint16, pc uint16, isAnAccumulator bool) {
+func inx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
+
+// Instruction: Subtraction with Borrow In
+// Function:    A = A - M - (1 - C)
+// Flags Out:   C, V, N, Z
+//
+// Explanation:
+// Given the explanation for ADC above, we can reorganise our data
+// to use the same computation for addition, for subtraction by multiplying
+// the data by -1, i.e. make it negative
+//
+// A = A - M - (1 - C)  ->  A = A + -1 * (M - (1 - C))  ->  A = A + (-M + 1 + C)
+//
+// To make a signed positive number negative, we can invert the bits and add 1
+// (OK, I lied, a little bit of 1 and 2s complement :P)
+//
+//  5 = 00000101
+// -5 = 11111010 + 00000001 = 11111011 (or 251 in our 0 to 255 range)
+//
+// The range is actually unimportant, because if I take the value 15, and add 251
+// to it, given we wrap around at 256, the result is 10, so it has effectively
+// subtracted 5, which was the original intention. (15 + 251) % 256 = 10
+//
+// Note that the equation above used (1-C), but this got converted to + 1 + C.
+// This means we already have the +1, so all we need to do is invert the bits
+// of M, the data(!) therfore we can simply add, exactly the same way we did
+// before.
+func sbc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	var a byte = cpu.A
+	var m byte = cpu.bus.Read(address)
+	var c byte = cpu.C
 
-func sbc(address uint16, pc uint16, isAnAccumulator bool) {
+	cpu.A += (-m + 1 + c)
+	cpu.setZ(cpu.A)
+	cpu.setN(cpu.A)
+	if cpu.A > 0xFF {
+		cpu.C = 1
+	} else {
+		cpu.C = 0
+	}
+	if (a^m)&0x80 == 0 && (a^cpu.A)&0x80 == 1 { //!= 0 {
+		cpu.V = 1
+	} else {
+		cpu.V = 0
+	}
 
 }
 
-func beq(address uint16, pc uint16, isAnAccumulator bool) {
+//branch if equal
+// Instruction: Branch if Equal
+// Function:    if(Z == 1) pc = address
+func beq(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	if cpu.Z == 1 {
+		cpu.PC = address
+		// adds a cycle for taking a branch and adds another cycle
+		// if the branch jumps to a new page
+		cpu.Cycles++
+		addrAbs := pc + address
 
+		//if the two addresses reference different pages
+		if (addrAbs & 0xFF00) != (pc & 0xFF00) {
+			cpu.Cycles++
+		}
+		//pc = addrAbs //Todo should i save the new addr ???
+	}
 }
 
-func sed(address uint16, pc uint16, isAnAccumulator bool) {
+func sed(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func asl(address uint16, pc uint16, isAnAccumulator bool) {
+func asl(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
-func bit(address uint16, pc uint16, isAnAccumulator bool) {
+func bit(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
 //_________________________________________________________________________________________________________________________________
+
+// setZ sets the zero flag if the argument is zero
+func (cpu *CPU) setZ(value byte) {
+	if value == 0 {
+		cpu.Z = 1
+	} else {
+		cpu.Z = 0
+	}
+}
+
+// setN sets the negative flag if the argument is negative (high bit is set)
+func (cpu *CPU) setN(value byte) {
+	if value&0x80 != 0 {
+		cpu.N = 1
+	} else {
+		cpu.N = 0
+	}
+}
 
 // addressing modes
 const (
@@ -501,6 +762,7 @@ func createModesTables() map[byte]addrModes {
 	return modes
 }
 
+//init and create nes CPU
 func CreateCpu() *CPU {
 	cpu := CPU{}
 
@@ -514,6 +776,8 @@ func (cpu *CPU) Step() uint64 {
 	var startNbCycles uint64 = cpu.Cycles
 	var opCodeIndex byte = cpu.bus.Read(cpu.PC)
 	var op opCode = opCodeMatrix[opCodeIndex]
+	var isAnAccumulator bool = false
+	var address uint16
 
 	cpu.PC += uint16(op.instructionSize)
 	cpu.Cycles += uint64(op.nbCycle)
@@ -522,6 +786,10 @@ func (cpu *CPU) Step() uint64 {
 	// 	cpu.Cycles += uint64(instructionPageCycles[opcode])
 	// }
 
-	//var address uint16 = cpu.modesTable[op.instructionMode](cpu) //return addr mode
+	if op.instructionMode == modeAccumulator {
+		isAnAccumulator = true
+	}
+	address = cpu.modesTable[op.instructionMode](cpu) //return addr mode
+	op.instructionExec(cpu, address, op.instructionSize, isAnAccumulator)
 	return cpu.Cycles - startNbCycles
 }
