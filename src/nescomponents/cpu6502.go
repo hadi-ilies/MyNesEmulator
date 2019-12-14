@@ -129,8 +129,26 @@ func nop(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
+// PHP - Push Processor Status
+// Instruction: Push Status Register to Stack
+// Function:    status -> stack
+// Note:        Break flag is set to 1 before push
 func php(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	var currentFlags byte
 
+	currentFlags |= cpu.C << 0
+	currentFlags |= cpu.Z << 1
+	currentFlags |= cpu.I << 2
+	currentFlags |= cpu.D << 3
+	currentFlags |= cpu.B << 4
+	currentFlags |= cpu.U << 5
+	currentFlags |= cpu.V << 6
+	currentFlags |= cpu.N << 7
+
+	// push all current cpu flags bytes into the stack
+	// 0x100 + uint16(cpu.SP) works too
+	cpu.bus.Write(0x100|uint16(cpu.SP), currentFlags|0x10)
+	cpu.SP--
 }
 
 //branch if position
@@ -223,8 +241,14 @@ func lsr(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 }
 
+// PHA - Push Accumulator
+// Instruction: Push Accumulator to Stack
+// Function:    A -> stack write function allow me to access to the BUS
 func pha(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
+	// push A byte into the stack
+	// 0x100 + uint16(cpu.SP) works too
+	cpu.bus.Write(0x100|uint16(cpu.SP), cpu.A)
+	cpu.SP--
 }
 
 func alr(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
