@@ -1,33 +1,39 @@
 package ui
 
 import (
-	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/pixelgl"
-	"golang.org/x/image/colornames"
+	"runtime"
+
+	"github.com/go-gl/glfw/v3.3/glfw"
 )
 
-func createWindow(width uint, height uint, bitPerPixel uint, title string) {
+func init() {
+	// This is needed to arrange that main() runs on main thread.
+	// See documentation for functions that are only allowed to be called from the main thread.
+	runtime.LockOSThread()
 }
 
-func run() {
-	cfg := pixelgl.WindowConfig{
-		Title:  "NES-EMULATOR",
-		Bounds: pixel.R(0, 0, 1024, 768),
-		VSync:  true,
+type Vector2i struct {
+	X int32
+	Y int32
+}
+
+func Run(path string) bool {
+	err := glfw.Init()
+	if err != nil {
+		panic(err)
 	}
-	win, err := pixelgl.NewWindow(cfg)
+	defer glfw.Terminate()
+	window, err := glfw.CreateWindow(800, 600, "NES-EMULATOR", nil, nil)
+
 	if err != nil {
 		panic(err)
 	}
 
-	win.Clear(colornames.Skyblue)
-
-	for !win.Closed() {
-		win.Update()
+	window.MakeContextCurrent()
+	for !window.ShouldClose() {
+		// Do OpenGL stuff.
+		window.SwapBuffers()
+		glfw.PollEvents()
 	}
-}
-
-func Run(path string) bool {
-	pixelgl.Run(run)
 	return true
 }
