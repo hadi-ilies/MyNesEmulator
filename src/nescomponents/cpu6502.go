@@ -28,7 +28,7 @@ func pagesDiffer(a uint16, b uint16) bool {
 // pull pops a byte from the stack
 func (cpu *CPU) pull() byte {
 	cpu.SP++
-	return cpu.bus.Read(0x100 | uint16(cpu.SP))
+	return cpu.bus.CpuRead(0x100 | uint16(cpu.SP))
 }
 
 // pull16 pops two bytes from the stack
@@ -41,8 +41,8 @@ func (cpu *CPU) pull16() uint16 {
 
 // Read16 reads two bytes using Read to return a double-word value
 func (cpu *CPU) Read16(address uint16) uint16 {
-	var low uint16 = uint16(cpu.bus.Read(address))
-	var high uint16 = uint16(cpu.bus.Read(address + 1))
+	var low uint16 = uint16(cpu.bus.CpuRead(address))
+	var high uint16 = uint16(cpu.bus.CpuRead(address + 1))
 
 	return high<<8 | low
 }
@@ -52,8 +52,8 @@ func (cpu *CPU) Read16(address uint16) uint16 {
 func (cpu *CPU) read16bug(address uint16) uint16 {
 	a := address
 	b := (a & 0xFF00) | uint16(byte(a)+1)
-	lo := cpu.bus.Read(a)
-	hi := cpu.bus.Read(b)
+	lo := cpu.bus.CpuRead(a)
+	hi := cpu.bus.CpuRead(b)
 	return uint16(hi)<<8 | uint16(lo)
 }
 
@@ -98,7 +98,7 @@ func implied(cpu *CPU) uint16 {
 }
 
 func indexedIndirect(cpu *CPU) uint16 {
-	var address uint16 = cpu.read16bug(uint16(cpu.bus.Read(cpu.PC+1) + cpu.X))
+	var address uint16 = cpu.read16bug(uint16(cpu.bus.CpuRead(cpu.PC+1) + cpu.X))
 
 	return address
 }
@@ -110,13 +110,13 @@ func indirect(cpu *CPU) uint16 {
 }
 
 func indirectIndexed(cpu *CPU) uint16 {
-	var address uint16 = cpu.read16bug(uint16(cpu.bus.Read(cpu.PC+1))) + uint16(cpu.Y)
+	var address uint16 = cpu.read16bug(uint16(cpu.bus.CpuRead(cpu.PC+1))) + uint16(cpu.Y)
 
 	return address
 }
 
 func relative(cpu *CPU) uint16 {
-	offset := uint16(cpu.bus.Read(cpu.PC + 1))
+	offset := uint16(cpu.bus.CpuRead(cpu.PC + 1))
 	var address uint16 = cpu.PC + 2 + offset - 0x100
 
 	if offset < 0x80 {
@@ -126,19 +126,19 @@ func relative(cpu *CPU) uint16 {
 }
 
 func zeroPage(cpu *CPU) uint16 {
-	var address uint16 = uint16(cpu.bus.Read(cpu.PC + 1))
+	var address uint16 = uint16(cpu.bus.CpuRead(cpu.PC + 1))
 
 	return address
 }
 
 func zeroPageX(cpu *CPU) uint16 {
-	var address uint16 = uint16(cpu.bus.Read(cpu.PC+1)+cpu.X) & 0xff
+	var address uint16 = uint16(cpu.bus.CpuRead(cpu.PC+1)+cpu.X) & 0xff
 
 	return address
 }
 
 func zeroPageY(cpu *CPU) uint16 {
-	var address uint16 = uint16(cpu.bus.Read(cpu.PC+1)+cpu.Y) & 0xff
+	var address uint16 = uint16(cpu.bus.CpuRead(cpu.PC+1)+cpu.Y) & 0xff
 	return address
 }
 
@@ -149,9 +149,9 @@ func brk(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 	high := byte(cpu.PC >> 8)
 	low := byte(cpu.PC & 0xFF)
 
-	cpu.bus.Write(0x100|uint16(cpu.SP), high)
+	cpu.bus.CpuWrite(0x100|uint16(cpu.SP), high)
 	cpu.SP--
-	cpu.bus.Write(0x100|uint16(cpu.SP), low)
+	cpu.bus.CpuWrite(0x100|uint16(cpu.SP), low)
 	cpu.SP--
 	php(cpu, address, pc, isAnAccumulator)
 	sei(cpu, address, pc, isAnAccumulator)
@@ -160,7 +160,7 @@ func brk(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 // ORA - Logical Inclusive OR on the accumulator
 func ora(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	cpu.A |= cpu.bus.Read(address)
+	cpu.A |= cpu.bus.CpuRead(address)
 	cpu.setZ(cpu.A)
 	cpu.setN(cpu.A)
 }
@@ -183,7 +183,7 @@ func php(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 	// push all current cpu flags bytes into the stack
 	// 0x100 + uint16(cpu.SP) works too
-	cpu.bus.Write(0x100|uint16(cpu.SP), currentFlags|0x10)
+	cpu.bus.CpuWrite(0x100|uint16(cpu.SP), currentFlags|0x10)
 	cpu.SP--
 }
 
@@ -223,16 +223,16 @@ func jsr(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 	//extract the second
 	low := byte(value & 0xFF)
 	//write bytes on bus
-	cpu.bus.Write(0x100|uint16(cpu.SP), high)
+	cpu.bus.CpuWrite(0x100|uint16(cpu.SP), high)
 	cpu.SP--
-	cpu.bus.Write(0x100|uint16(cpu.SP), low)
+	cpu.bus.CpuWrite(0x100|uint16(cpu.SP), low)
 	cpu.SP--
 	cpu.PC = address
 }
 
 //this instruction is simply an 'and' logic gate
 func and(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	cpu.A &= cpu.bus.Read(address)
+	cpu.A &= cpu.bus.CpuRead(address)
 	cpu.setZ(cpu.A)
 	cpu.setN(cpu.A)
 }
@@ -247,11 +247,11 @@ func rol(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 		cpu.setZ(cpu.A)
 		cpu.setN(cpu.A)
 	} else {
-		var value byte = cpu.bus.Read(address)
+		var value byte = cpu.bus.CpuRead(address)
 
 		cpu.C = (value >> 7) & 1
 		value = (value << 1) | c
-		cpu.bus.Write(address, value)
+		cpu.bus.CpuWrite(address, value)
 		cpu.setZ(value)
 		cpu.setN(value)
 	}
@@ -315,7 +315,7 @@ func rti(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 // EOR - Exclusive OR
 func eor(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	cpu.A = cpu.A ^ cpu.bus.Read(address)
+	cpu.A = cpu.A ^ cpu.bus.CpuRead(address)
 	cpu.setZ(cpu.A)
 	cpu.setN(cpu.A)
 }
@@ -328,11 +328,11 @@ func lsr(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 		cpu.setZ(cpu.A)
 		cpu.setN(cpu.A)
 	} else {
-		var value byte = cpu.bus.Read(address)
+		var value byte = cpu.bus.CpuRead(address)
 
 		cpu.C = value & 1
 		value >>= 1
-		cpu.bus.Write(address, value)
+		cpu.bus.CpuWrite(address, value)
 		cpu.setZ(value)
 		cpu.setN(value)
 	}
@@ -344,7 +344,7 @@ func lsr(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 func pha(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 	// push A byte into the stack
 	// 0x100 + uint16(cpu.SP) works too
-	cpu.bus.Write(0x100|uint16(cpu.SP), cpu.A)
+	cpu.bus.CpuWrite(0x100|uint16(cpu.SP), cpu.A)
 	cpu.SP--
 }
 
@@ -443,7 +443,7 @@ func rts(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 //       Negative Number + Negative Number = Negative Result -> OK! NO Overflow
 func adc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 	var a byte = cpu.A
-	var m byte = cpu.bus.Read(address)
+	var m byte = cpu.bus.CpuRead(address)
 	var c byte = cpu.C
 
 	cpu.A = a + m + c
@@ -471,11 +471,11 @@ func ror(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 		cpu.setZ(cpu.A)
 		cpu.setN(cpu.A)
 	} else {
-		var value byte = cpu.bus.Read(address)
+		var value byte = cpu.bus.CpuRead(address)
 
 		cpu.C = value & 1
 		value = (value >> 1) | (c << 7)
-		cpu.bus.Write(address, value)
+		cpu.bus.CpuWrite(address, value)
 		cpu.setZ(value)
 		cpu.setN(value)
 	}
@@ -519,7 +519,7 @@ func sei(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 // STA - Store Accumulator
 func sta(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	cpu.bus.Write(address, cpu.A)
+	cpu.bus.CpuWrite(address, cpu.A)
 }
 
 //DEY - Decrement Y Register
@@ -539,12 +539,12 @@ func txa(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 // STY - Store Y Register
 func sty(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	cpu.bus.Write(address, cpu.Y)
+	cpu.bus.CpuWrite(address, cpu.Y)
 }
 
 // STX - Store X Register
 func stx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	cpu.bus.Write(address, cpu.X)
+	cpu.bus.CpuWrite(address, cpu.X)
 }
 
 //this function branch if the carry is clear
@@ -585,21 +585,21 @@ func tas(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 // LDY - Load Y Register
 func ldy(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	cpu.Y = cpu.bus.Read(address)
+	cpu.Y = cpu.bus.CpuRead(address)
 	cpu.setZ(cpu.Y)
 	cpu.setN(cpu.Y)
 }
 
 // LDA - Load Accumulator
 func lda(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	cpu.A = cpu.bus.Read(address)
+	cpu.A = cpu.bus.CpuRead(address)
 	cpu.setZ(cpu.A)
 	cpu.setN(cpu.A)
 }
 
 // LDX - Load X Register
 func ldx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	cpu.X = cpu.bus.Read(address)
+	cpu.X = cpu.bus.CpuRead(address)
 	cpu.setZ(cpu.X)
 	cpu.setN(cpu.X)
 
@@ -655,7 +655,7 @@ func tsx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 // Function:    C <- Y >= M      Z <- (Y - M) == 0
 // Flags Out:   N, C, Z
 func cpy(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	var value byte = cpu.bus.Read(address)
+	var value byte = cpu.bus.CpuRead(address)
 
 	cpu.setZ(cpu.Y - value)
 	cpu.setN(cpu.Y - value)
@@ -671,7 +671,7 @@ func cpy(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 // Function:    C <- A >= M      Z <- (A - M) == 0
 // Flags Out:   N, C, Z
 func cmp(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	var value byte = cpu.bus.Read(address)
+	var value byte = cpu.bus.CpuRead(address)
 
 	cpu.setZ(cpu.A - value)
 	cpu.setN(cpu.A - value)
@@ -684,9 +684,9 @@ func cmp(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 // DEC - Decrement Memory
 func dec(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	var decAddr byte = cpu.bus.Read(address) - 1
+	var decAddr byte = cpu.bus.CpuRead(address) - 1
 
-	cpu.bus.Write(address, decAddr)
+	cpu.bus.CpuWrite(address, decAddr)
 	cpu.setZ(decAddr)
 	cpu.setN(decAddr)
 }
@@ -734,7 +734,7 @@ func cld(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 // Function:    C <- X >= M      Z <- (X - M) == 0
 // Flags Out:   N, C, Z
 func cpx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	var value byte = cpu.bus.Read(address)
+	var value byte = cpu.bus.CpuRead(address)
 
 	cpu.setZ(cpu.X - value)
 	cpu.setN(cpu.X - value)
@@ -747,9 +747,9 @@ func cpx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 // INC - Increment Memory
 func inc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	var incAddr byte = cpu.bus.Read(address) + 1
+	var incAddr byte = cpu.bus.CpuRead(address) + 1
 
-	cpu.bus.Write(address, incAddr)
+	cpu.bus.CpuWrite(address, incAddr)
 
 	cpu.setZ(incAddr)
 	cpu.setN(incAddr)
@@ -789,7 +789,7 @@ func inx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 // before.
 func sbc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 	var a byte = cpu.A
-	var m byte = cpu.bus.Read(address)
+	var m byte = cpu.bus.CpuRead(address)
 	var c byte = cpu.C
 
 	cpu.A += (-m + 1 + c)
@@ -835,7 +835,7 @@ func sed(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 // BIT - Bit Test
 func bit(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	value := cpu.bus.Read(address)
+	value := cpu.bus.CpuRead(address)
 	cpu.V = (value >> 6) & 1
 	cpu.setZ(value & cpu.A)
 	cpu.setN(value)
@@ -849,11 +849,11 @@ func asl(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 		cpu.setZ(cpu.A)
 		cpu.setN(cpu.A)
 	} else {
-		var value byte = cpu.bus.Read(address)
+		var value byte = cpu.bus.CpuRead(address)
 
 		cpu.C = (value >> 7) & 1
 		value <<= 1
-		cpu.bus.Write(address, value)
+		cpu.bus.CpuWrite(address, value)
 		cpu.setZ(value)
 		cpu.setN(value)
 	}
@@ -1058,9 +1058,9 @@ func (cpu *CPU) cpuInterruptions(interruptMode byte) {
 		//extract the second
 		low := byte(value & 0xFF)
 		//write bytes on bus
-		cpu.bus.Write(0x100|uint16(cpu.SP), high)
+		cpu.bus.CpuWrite(0x100|uint16(cpu.SP), high)
 		cpu.SP--
-		cpu.bus.Write(0x100|uint16(cpu.SP), low)
+		cpu.bus.CpuWrite(0x100|uint16(cpu.SP), low)
 		cpu.SP--
 
 		php(cpu, 0, 0, false) // get current flags
@@ -1123,7 +1123,7 @@ func (cpu *CPU) Step() uint64 {
 		return 1
 	}
 	var startNbCycles uint64 = cpu.Cycles
-	var opCodeIndex byte = cpu.bus.Read(cpu.PC)
+	var opCodeIndex byte = cpu.bus.CpuRead(cpu.PC)
 	var op opCode = opCodeMatrix[opCodeIndex]
 	var isAnAccumulator bool = false
 	var address uint16

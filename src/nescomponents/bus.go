@@ -1,19 +1,24 @@
 package nescomponents
 
 type BUS struct {
-	cpu *CPU
-	ram [2048]byte
+	cpu    *CPU
+	cpuRam [2048]byte
+	PPU    *PPU
 }
 
-func (bus *BUS) Write(address uint16, data byte) {
-	if address >= 0x0000 && address <= 0xFFFF {
-		bus.ram[address] = data
+func (bus *BUS) CpuWrite(address uint16, data byte) {
+	//8KB range
+	if address >= 0x0000 && address <= 0x1FFF {
+		bus.cpuRam[address&0x07FF] = data
 	}
 }
 
-func (bus *BUS) Read(address uint16) byte {
-	if address >= 0x0000 && address <= 0xFFFF {
-		return bus.ram[address]
+func (bus *BUS) CpuRead(address uint16) byte {
+	var data byte = 0x00
+
+	//8KB range
+	if address >= 0x0000 && address <= 0x1FFF {
+		data = bus.cpuRam[address&0x07FF]
 	}
-	return 0x00
+	return data
 }
