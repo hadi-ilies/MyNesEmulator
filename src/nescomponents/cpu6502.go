@@ -1092,7 +1092,7 @@ func (cpu *CPU) reset() {
 }
 
 //init and create nes CPU
-func CreateCpu() *CPU {
+func NewCpu() *CPU {
 	var cpu CPU = CPU{}
 
 	cpu.modesTable = createModesTables()
