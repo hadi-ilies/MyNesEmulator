@@ -107,7 +107,9 @@ func NewCartridge(filename string) *Cartridge {
 	cartridge.sram = make([]byte, 0x2000)
 
 	//load the mapper
-	cartridge.mapper, err = NewMapper(&cartridge) //todo check pointer
+
+	mapperTmp, err := NewMapper(&cartridge) //todo check pointer
+	cartridge.mapper = *mapperTmp
 	if err != nil {
 		println("call usage and exit")
 	}

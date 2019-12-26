@@ -34,7 +34,6 @@ func Run(path string) bool {
 		return false
 		//panic(err)
 	}
-
 	window.MakeContextCurrent()
 
 	// initialize opengl

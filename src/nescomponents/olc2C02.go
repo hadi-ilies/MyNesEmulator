@@ -99,3 +99,11 @@ type PPU struct {
 	//back          *image.RGBA
 
 }
+
+func NewPpu(cpu *CPU, cartridge *Cartridge) *PPU {
+	var ppu PPU
+
+	ppu.cpu = cpu
+	ppu.cartridge = cartridge
+	return &ppu
+}
