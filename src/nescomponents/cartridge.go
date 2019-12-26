@@ -8,24 +8,33 @@ import (
 
 //Comunication with main BUS
 func (cartridge *Cartridge) CpuWrite(address uint16, data byte) bool {
-	return false
+	return cartridge.mapper.Write(address, data)
 }
 
-func (cartridge *Cartridge) CpuRead(address uint16) bool {
+func (cartridge *Cartridge) CpuRead(address uint16, data *byte) bool {
+	*data = cartridge.mapper.Read(address)
+	if *data != 0 {
+		return true
+	}
 	return false
 }
 
 //Comunication  with the second "PPU" BUS
-func (cartridge *Cartridge) PpuRead(address uint16) bool {
+func (cartridge *Cartridge) PpuRead(address uint16, data *byte) bool {
+	*data = cartridge.mapper.Read(address)
+	if *data != 0 {
+		return true
+	}
 	return false
 }
 
 func (cartridge *Cartridge) PpuWrite(address uint16, data byte) bool {
-	return false
+	return cartridge.mapper.Write(address, data)
 }
 
 //The game "la cartouche"
 type Cartridge struct {
+	mapper     Mapper
 	prg        []byte // PRG-ROM banks
 	chr        []byte // CHR-ROM banks
 	sram       []byte // Save RAM
@@ -97,5 +106,10 @@ func NewCartridge(filename string) *Cartridge {
 	//sram allocation
 	cartridge.sram = make([]byte, 0x2000)
 
+	//load the mapper
+	cartridge.mapper, err = NewMapper(&cartridge) //todo check pointer
+	if err != nil {
+		println("call usage and exit")
+	}
 	return &cartridge
 }

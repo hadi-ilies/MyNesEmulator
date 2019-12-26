@@ -4,11 +4,12 @@ import "fmt"
 
 type Mapper interface {
 	Read(address uint16) byte
-	Write(address uint16, value byte)
+	Write(address uint16, value byte) bool
 	Step()
 }
 
 func NewMapper(cartridge *Cartridge) (Mapper, error) {
+	//load appropriate mapper
 	switch cartridge.mapperType {
 	// case 0:
 	// 	return NewMapper2(cartridge), nil

@@ -44,10 +44,10 @@ func (mapper *Mapper1) Read(address uint16) byte {
 	default:
 		log.Fatalf("unhandled mapper1 read at address: 0x%04X", address)
 	}
-	return 0
+	return 0x00
 }
 
-func (mapper *Mapper1) Write(address uint16, value byte) {
+func (mapper *Mapper1) Write(address uint16, value byte) bool {
 	switch {
 	case address < 0x2000:
 		bank := address / 0x1000
@@ -59,7 +59,9 @@ func (mapper *Mapper1) Write(address uint16, value byte) {
 		mapper.cartridge.sram[int(address)-0x6000] = value
 	default:
 		log.Fatalf("unhandled mapper1 write at address: 0x%04X", address)
+		return false
 	}
+	return true
 }
 
 func (mapper *Mapper1) loadRegister(address uint16, value byte) {

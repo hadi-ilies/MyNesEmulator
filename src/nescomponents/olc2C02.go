@@ -65,7 +65,7 @@ func (ppu *PPU) Read(address uint16) byte {
 	var data byte = 0x00
 	address &= 0x3FFF
 
-	if ppu.cartridge.PpuRead(address) {
+	if ppu.cartridge.PpuRead(address, &data) {
 
 	}
 	return data

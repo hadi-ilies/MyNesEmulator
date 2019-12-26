@@ -1,10 +1,21 @@
 package nescomponents
 
+// Mirroring Modes
+
+const (
+	MirrorHorizontal = 0
+	MirrorVertical   = 1
+	MirrorSingle0    = 2
+	MirrorSingle1    = 3
+	MirrorFour       = 4
+)
+
 type BUS struct {
 	cpu          *CPU
 	cpuRam       [2048]byte //fake ram
 	ppu          *PPU
 	cartridge    *Cartridge
+	Mapper       *Mapper
 	clockCounter uint //nb clock
 }
 
@@ -22,7 +33,7 @@ func (bus *BUS) CpuWrite(address uint16, data byte) {
 func (bus *BUS) CpuRead(address uint16) byte {
 	var data byte = 0x00
 
-	if bus.cartridge.CpuRead(address) { //check cartrige addr
+	if bus.cartridge.CpuRead(address, &data) { //check cartrige addr
 		println("LOL i have made another optimization")
 	} else if address >= 0x0000 && address <= 0x1FFF { //8KB range
 		data = bus.cpuRam[address&0x07FF]
