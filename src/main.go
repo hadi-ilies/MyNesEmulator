@@ -48,7 +48,7 @@ func main() {
 	if argc != 2 {
 		usage(constant.ExitFailure, "not enought arguments")
 	}
-	if !ui.Run(os.Args[1]) {
+	if !ui.Start(os.Args[1]) {
 		usage(constant.ExitFailure, "Execution error")
 	}
 }
