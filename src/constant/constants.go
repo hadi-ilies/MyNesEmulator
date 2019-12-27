@@ -7,3 +7,10 @@ const (
 	ExitSuccess = 0
 	ExitFailure = 1
 )
+
+//const of ui
+const (
+	UITitle      = "NES-EMULATOR"
+	WindowWidth  = 800
+	WindowHeight = 600
+)
