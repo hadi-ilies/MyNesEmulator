@@ -27,6 +27,11 @@ func NewUI(width int, height int, uiTitle string) *Ui {
 	return &ui
 }
 
+//return a pointer on the window of the ui
+func (ui *Ui) GetWindow() *glfw.Window { // i have created this func because i can't access elem of struct in another packet golang allow method only. have to check this on internet.
+	return ui.window
+}
+
 func (ui *Ui) displayView() {
 
 }
