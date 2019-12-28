@@ -5,7 +5,7 @@ import (
 )
 
 type Nes struct {
-	bus *nescomponents.BUS
+	Bus *nescomponents.BUS
 }
 
 func NewNes(gamePath string) Nes {
