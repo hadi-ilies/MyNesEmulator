@@ -70,3 +70,17 @@ func (bus *BUS) InsertCartridge(cartridge *Cartridge) {
 	bus.cartridge = cartridge
 	bus.ppu.ConnectCartridge(cartridge)
 }
+
+/*getter*/
+
+func (bus *BUS) GetCpu() *CPU {
+	return bus.cpu
+}
+
+func (bus *BUS) GetPpu() *PPU {
+	return bus.ppu
+}
+
+func (bus *BUS) GetCartridge() *Cartridge {
+	return bus.cartridge
+}
