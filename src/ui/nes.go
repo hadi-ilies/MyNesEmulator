@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"image"
+
 	"github.com/hadi-ilies/MyNesEmulator/src/nescomponents"
 )
 
@@ -30,4 +32,9 @@ func (nes *Nes) Display() {
 //get the circuit that is linked with all nes components
 func (nes *Nes) GetComponents() *nescomponents.BUS {
 	return nes.bus
+}
+
+//todo return ppu pixel buffer
+func (nes *Nes) PixelBuffer() *image.RGBA {
+	return &image.RGBA{}
 }
