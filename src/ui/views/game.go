@@ -69,15 +69,14 @@ func (gameView *GameView) Update() {
 	// if readKey(window, glfw.KeyEscape) {
 	// 	view.director.ShowMenu()
 	// }
-	//updateControllers(window, console)
+	//updateControllers(window, console) todo code this func
 	//console.StepSeconds(dt)
-
 	gl.BindTexture(gl.TEXTURE_2D, gameView.texture)
-	//oglEncap.SetTexture(console.Buffer()) //todo code the buffer
-	gameView.drawBuffer(gameView.ui.GetWindow())
+	oglEncap.SetTexture(gameView.nes.PixelBuffer()) //todo code the buffer
+	gameView.drawBuffer(gameView.ui.GetWindow().GetFramebufferSize())
 	gl.BindTexture(gl.TEXTURE_2D, 0)
 	if gameView.record {
-		//gameView.frames = append(gameView.frames, oglEncap.TakeScreenShot(console.Buffer())) todo
+		gameView.frames = append(gameView.frames, oglEncap.TakeScreenShot(gameView.nes.PixelBuffer()))
 	}
 }
 
@@ -114,11 +113,10 @@ func (view *GameView) onKey(window *glfw.Window, key glfw.Key, scancode int, act
 	}
 }
 
-func (view *GameView) drawBuffer(window *glfw.Window) {
+func (view *GameView) drawBuffer(bufferWidth int, bufferHeight int) {
 	padding := 0
-	w, h := window.GetFramebufferSize()
-	s1 := float32(w) / 256
-	s2 := float32(h) / 240
+	s1 := float32(bufferWidth) / 256
+	s2 := float32(bufferHeight) / 240
 	f := float32(1 - padding)
 	var x, y float32
 	if s1 >= s2 {
@@ -139,3 +137,13 @@ func (view *GameView) drawBuffer(window *glfw.Window) {
 	gl.Vertex2f(-x, y)
 	gl.End()
 }
+
+//TODO
+// func updateControllers(window *glfw.Window, console *nes.Console) {
+// 	turbo := console.PPU.Frame%6 < 3
+// 	k1 := readKeys(window, turbo)
+// 	j1 := readJoystick(glfw.Joystick1, turbo)
+// 	j2 := readJoystick(glfw.Joystick2, turbo)
+// 	console.SetButtons1(combineButtons(k1, j1))
+// 	console.SetButtons2(j2)
+// }
