@@ -6,8 +6,9 @@ import (
 )
 
 type Ui struct {
-	window    *glfw.Window
-	timestamp float64
+	window     *glfw.Window
+	actualView View
+	timestamp  float64
 }
 
 //UI constructor
@@ -32,14 +33,23 @@ func (ui *Ui) GetWindow() *glfw.Window { // i have created this func because i c
 	return ui.window
 }
 
-func (ui *Ui) displayView() {
-
+func (ui *Ui) displayView(view View) {
+	if ui.actualView != nil {
+		ui.actualView.End()
+	}
+	ui.actualView = view
+	if ui.actualView != nil {
+		ui.actualView.Start()
+	}
+	ui.timestamp = glfw.GetTime()
 }
 
+//ToDO refacto code move nes into nescomponent and create dir in it
 //playGame
 func (ui *Ui) loadGame(gamePath string) {
 	//var nes Nes = NewNes(gamePath)
 
+	//ui.displayView(views.NewGameView(ui, &nes))
 }
 
 //start UI it is the main loop
