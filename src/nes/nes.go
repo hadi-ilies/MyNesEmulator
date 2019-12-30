@@ -3,7 +3,7 @@ package ui
 import (
 	"image"
 
-	"github.com/hadi-ilies/MyNesEmulator/src/nescomponents"
+	"github.com/hadi-ilies/MyNesEmulator/src/nes/nescomponents"
 )
 
 /**
