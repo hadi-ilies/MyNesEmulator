@@ -67,16 +67,16 @@ func NewCartridge(filename string) *Cartridge {
 	//todo check header
 
 	//get mapperId
-	cartridge.mapperType = ((sHeader.mapper2 >> 4) << 4) | (sHeader.mapper1 >> 4)
+	cartridge.mapperType = ((sHeader.Mapper2 >> 4) << 4) | (sHeader.Mapper1 >> 4)
 
 	//get mirror mode
-	cartridge.mirror = (sHeader.mapper1 & 1) | (((sHeader.mapper1 >> 3) & 1) << 1)
+	cartridge.mirror = (sHeader.Mapper1 & 1) | (((sHeader.Mapper1 >> 3) & 1) << 1)
 
 	// battery-backed RAM
-	cartridge.battery = (sHeader.mapper1 >> 1) & 1
+	cartridge.battery = (sHeader.Mapper1 >> 1) & 1
 
 	// read trainer if present (unused)
-	if sHeader.mapper1&0x04 == 4 {
+	if sHeader.Mapper1&0x04 == 4 {
 		trainer := make([]byte, 512)
 		if _, err := io.ReadFull(file, trainer); err != nil {
 			println("call usage and exit")
@@ -85,7 +85,7 @@ func NewCartridge(filename string) *Cartridge {
 
 	// read prg-rom bank(s)
 
-	cartridge.prg = make([]byte, int(sHeader.prgRomChunks)*16384) //number mentioned // http://wiki.nesdev.com/w/index.php/INES // http://nesdev.com/NESDoc.pdf (page 28)
+	cartridge.prg = make([]byte, int(sHeader.PrgRomChunks)*16384) //number mentioned // http://wiki.nesdev.com/w/index.php/INES // http://nesdev.com/NESDoc.pdf (page 28)
 
 	if _, err := io.ReadFull(file, cartridge.prg); err != nil {
 		println("call usage and exit")
@@ -94,11 +94,11 @@ func NewCartridge(filename string) *Cartridge {
 	// read chr-rom bank(s)
 
 	// provide chr-rom/ram if not in file
-	if sHeader.chrRomChunks == 0 {
-		sHeader.chrRomChunks = 1
+	if sHeader.ChrRomChunks == 0 {
+		sHeader.ChrRomChunks = 1
 	}
 	//make funtion allow memory allocation just like malloc
-	cartridge.chr = make([]byte, int(sHeader.chrRomChunks)*8192) //number mentioned // http://wiki.nesdev.com/w/index.php/INES // http://nesdev.com/NESDoc.pdf (page 28)
+	cartridge.chr = make([]byte, int(sHeader.ChrRomChunks)*8192) //number mentioned // http://wiki.nesdev.com/w/index.php/INES // http://nesdev.com/NESDoc.pdf (page 28)
 	if _, err := io.ReadFull(file, cartridge.chr); err != nil {
 		println("call usage and exit")
 	}
