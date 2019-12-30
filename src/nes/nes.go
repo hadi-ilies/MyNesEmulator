@@ -17,6 +17,7 @@ type Nes struct {
 
 func NewNes(gamePath string) Nes {
 	var nes Nes = Nes{nescomponents.NewBus(nescomponents.NewCartridge(gamePath))} //load the cartridge file and insert it into the nes
+
 	return nes
 }
 

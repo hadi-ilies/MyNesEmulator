@@ -108,9 +108,9 @@ func NewCartridge(filename string) *Cartridge {
 
 	//load the mapper
 
-	mapperTmp, err := NewMapper(&cartridge) //todo check pointer
-	cartridge.mapper = *mapperTmp
-	if err != nil {
+	var maperr error
+	cartridge.mapper, maperr = NewMapper(&cartridge)
+	if maperr != nil {
 		println("call usage and exit")
 	}
 	return &cartridge

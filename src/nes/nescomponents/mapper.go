@@ -8,14 +8,13 @@ type Mapper interface {
 	Step()
 }
 
-func NewMapper(cartridge *Cartridge) (*Mapper, error) {
+func NewMapper(cartridge *Cartridge) (Mapper, error) {
 	//load appropriate mapper
 	switch cartridge.mapperType {
 	// case 0:
 	// 	return NewMapper2(cartridge), nil
 	case 1:
-		mapper := NewMapper1(cartridge)
-		return &mapper, nil
+		return NewMapper1(cartridge), nil
 		// case 2:
 		// 	return NewMapper2(cartridge), nil
 		// case 3:

@@ -23,9 +23,9 @@ type BUS struct {
 func NewBus(cartridge *Cartridge) *BUS {
 	var bus BUS
 
-	bus.cpu = NewCpu()
 	bus.cartridge = cartridge
 	bus.mapper = &cartridge.mapper
+	bus.cpu = NewCpu(&bus)
 	bus.ppu = NewPpu(bus.cpu, bus.cartridge)
 	bus.clockCounter = 0
 	return &bus

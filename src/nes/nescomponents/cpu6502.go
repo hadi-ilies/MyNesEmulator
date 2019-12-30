@@ -1023,7 +1023,7 @@ type CPU struct {
 	interrupt  byte               // interrupt type to perform
 	stall      int                // number of cycles to stall
 	modesTable map[byte]addrModes // address for each modes
-	bus        BUS                // Linkage to the communications bus
+	bus        *BUS               // Linkage to the communications bus
 }
 
 func createModesTables() map[byte]addrModes {
@@ -1092,8 +1092,8 @@ func (cpu *CPU) reset() {
 }
 
 //init and create nes CPU
-func NewCpu() *CPU {
-	var cpu CPU = CPU{}
+func NewCpu(bus *BUS) *CPU {
+	var cpu CPU = CPU{bus: bus}
 
 	cpu.modesTable = createModesTables()
 	cpu.reset()
