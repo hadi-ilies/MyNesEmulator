@@ -34,7 +34,7 @@ func (ui *Ui) GetWindow() *glfw.Window { // i have created this func because i c
 	return ui.window
 }
 
-func (ui *Ui) displayView(view View) {
+func (ui *Ui) getInView(view View) {
 	if ui.actualView != nil {
 		ui.actualView.End()
 	}
@@ -50,7 +50,16 @@ func (ui *Ui) displayView(view View) {
 func (ui *Ui) loadGame(gamePath string) {
 	var nes nes.Nes = nes.NewNes(gamePath)
 
-	ui.displayView(NewGameView(ui, &nes))
+	ui.getInView(NewGameView(ui, &nes))
+}
+
+func (ui *Ui) displayView() {
+	timestamp := glfw.GetTime()
+	//difftime := timestamp - ui.timestamp
+	ui.timestamp = timestamp
+	if ui.actualView != nil {
+		ui.actualView.Update()
+	}
 }
 
 //start UI it is the main loop
@@ -62,6 +71,7 @@ func (ui *Ui) Run(gamePath string) {
 		// Do OpenGL stuff.
 		//todo start emulator
 		gl.Clear(gl.COLOR_BUFFER_BIT) //clear screen
+		ui.displayView()              // display ui screen
 		ui.window.SwapBuffers()
 		glfw.PollEvents()
 	}

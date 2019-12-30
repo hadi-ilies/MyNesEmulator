@@ -72,7 +72,7 @@ func (gameView *GameView) Update() {
 	//updateControllers(window, console) todo code this func
 	//console.StepSeconds(dt)
 	gl.BindTexture(gl.TEXTURE_2D, gameView.texture)
-	oglEncap.SetTexture(gameView.nes.PixelBuffer()) //todo code the buffer
+	//oglEncap.SetTexture(gameView.nes.PixelBuffer()) //todo code the buffer
 	gameView.drawBuffer(gameView.ui.GetWindow().GetFramebufferSize())
 	gl.BindTexture(gl.TEXTURE_2D, 0)
 	if gameView.record {
