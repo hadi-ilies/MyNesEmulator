@@ -23,7 +23,7 @@ func NewNes(gamePath string) Nes {
 
 //reset the console
 func (nes *Nes) Reset() {
-	nes.Reset()
+	nes.bus.Reset()
 }
 
 func (nes *Nes) Display() {
