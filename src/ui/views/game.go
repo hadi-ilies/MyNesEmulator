@@ -5,12 +5,13 @@ import (
 
 	"github.com/go-gl/gl/v2.1/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
+	"github.com/hadi-ilies/MyNesEmulator/src/nes"
 	"github.com/hadi-ilies/MyNesEmulator/src/ui"
 	oglEncap "github.com/hadi-ilies/MyNesEmulator/src/ui/openglencapsulation" // import and rename the package openglencapsulation to oglEncap
 )
 
 type GameView struct {
-	nes     *ui.Nes
+	nes     *nes.Nes
 	ui      *ui.Ui // lol there is no inerittance in golang, I am a noob ':(
 	texture uint32
 	frames  []image.Image
@@ -24,7 +25,7 @@ type GameView struct {
 	// frames   []image.Image
 }
 
-func NewGameView(ui *ui.Ui, nes *ui.Nes) ui.View {
+func NewGameView(ui *ui.Ui, nes *nes.Nes) ui.View {
 	var gameView GameView
 
 	gameView.texture = oglEncap.CreateTexture()
