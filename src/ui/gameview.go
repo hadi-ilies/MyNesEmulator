@@ -1,18 +1,17 @@
-package views
+package ui
 
 import (
 	"image"
 
+	oglEncap "./openglencapsulation" // import and rename the package openglencapsulation to oglEncap
 	"github.com/go-gl/gl/v2.1/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/hadi-ilies/MyNesEmulator/src/nes"
-	"github.com/hadi-ilies/MyNesEmulator/src/ui"
-	oglEncap "github.com/hadi-ilies/MyNesEmulator/src/ui/openglencapsulation" // import and rename the package openglencapsulation to oglEncap
 )
 
 type GameView struct {
 	nes     *nes.Nes
-	ui      *ui.Ui // lol there is no inerittance in golang, I am a noob ':(
+	ui      *Ui // lol there is no inerittance in golang, I am a noob ':(
 	texture uint32
 	frames  []image.Image
 	record  bool // i am recording ?
@@ -25,7 +24,7 @@ type GameView struct {
 	// frames   []image.Image
 }
 
-func NewGameView(ui *ui.Ui, nes *nes.Nes) ui.View {
+func NewGameView(ui *Ui, nes *nes.Nes) View {
 	var gameView GameView
 
 	gameView.texture = oglEncap.CreateTexture()
@@ -39,7 +38,7 @@ func (gameView *GameView) Start() {
 	// view.director.SetTitle(view.title)
 	// view.console.SetAudioChannel(view.director.audio.channel)
 	// view.console.SetAudioSampleRate(view.director.audio.sampleRate)
-	gameView.ui.GetWindow().SetKeyCallback(gameView.onKey)
+	gameView.ui.GetWindow().SetKeyCallback(gameView.onKey) // todo getWindow can be removed
 	// load state
 	// if err := view.console.LoadState(savePath(view.hash)); err == nil {
 	// 	return

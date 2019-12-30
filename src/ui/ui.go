@@ -3,6 +3,7 @@ package ui
 import (
 	"github.com/go-gl/gl/v2.1/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
+	"github.com/hadi-ilies/MyNesEmulator/src/nes"
 )
 
 type Ui struct {
@@ -47,9 +48,9 @@ func (ui *Ui) displayView(view View) {
 //ToDO refacto code move nes into nescomponent and create dir in it
 //playGame
 func (ui *Ui) loadGame(gamePath string) {
-	//var nes Nes = NewNes(gamePath)
+	var nes nes.Nes = nes.NewNes(gamePath)
 
-	//ui.displayView(views.NewGameView(ui, &nes))
+	ui.displayView(NewGameView(ui, &nes))
 }
 
 //start UI it is the main loop
