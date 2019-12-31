@@ -1,5 +1,7 @@
 package nescomponents
 
+import "image"
+
 //cpu can read only 8 addrs form the ppu
 const (
 	control = 0x0000
@@ -95,9 +97,13 @@ type PPU struct {
 	nameTable    [2][1024]byte
 	paletteTable [32]byte  //ram connected to ppu that strored the palace info there are 32 entries
 	oam          [256]byte // (Object Attribute Memory)
-	//front         *image.RGBA
+	front        *image.RGBA
 	//back          *image.RGBA
 
+}
+
+func (ppu *PPU) GetFront() *image.RGBA {
+	return ppu.front
 }
 
 func NewPpu(cpu *CPU, cartridge *Cartridge) *PPU {
@@ -105,5 +111,6 @@ func NewPpu(cpu *CPU, cartridge *Cartridge) *PPU {
 
 	ppu.cpu = cpu
 	ppu.cartridge = cartridge
+	ppu.front = image.NewRGBA(image.Rect(0, 0, 256, 240))
 	return &ppu
 }
