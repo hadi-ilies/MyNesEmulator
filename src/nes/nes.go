@@ -26,10 +26,6 @@ func (nes *Nes) Reset() {
 	nes.bus.Reset()
 }
 
-func (nes *Nes) Display() {
-
-}
-
 //get the circuit that is linked with all nes components
 func (nes *Nes) GetComponents() *nescomponents.BUS {
 	return nes.bus
@@ -37,5 +33,27 @@ func (nes *Nes) GetComponents() *nescomponents.BUS {
 
 //todo return ppu pixel buffer
 func (nes *Nes) PixelBuffer() *image.RGBA {
-	return &image.RGBA{}
+	return nes.bus.GetPpu().GetFront()
+}
+
+func (nes *Nes) Step() uint64 {
+	var cpuCycles uint64 = nes.GetComponents().GetCpu().Step()
+	ppuCycles := cpuCycles * 3
+	var i uint64 = 0
+	for ; i < ppuCycles; i++ {
+		nes.GetComponents().GetPpu().Step()
+		//nes.GetComponents().GetMapper().Step() //todo it depend the mapper search a fix for that, i have to test that on the other rep
+	}
+	// for i := 0; i < cpuCycles; i++ {
+	// 	nes.APU.Step()
+	// }
+	return cpuCycles
+}
+
+func (nes *Nes) Run(seconds float64) {
+	CPUFrequency := float64(1789773)
+	cycles := int(CPUFrequency * seconds)
+	for cycles > 0 {
+		cycles -= int(nes.Step())
+	}
 }
