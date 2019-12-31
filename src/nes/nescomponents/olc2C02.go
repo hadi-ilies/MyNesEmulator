@@ -100,10 +100,23 @@ type PPU struct {
 	front        *image.RGBA
 	//back          *image.RGBA
 
+	//circuit variable
+	Cycle    int    // 0-340 nb cycles
+	ScanLine int    // 0-261, 0-239=visible, 240=post, 241-260=vblank, 261=pre
+	Frame    uint64 // frame counter
 }
 
 func (ppu *PPU) GetFront() *image.RGBA {
 	return ppu.front
+}
+
+func (ppu *PPU) Reset() {
+	ppu.Cycle = 340
+	ppu.ScanLine = 240
+	ppu.Frame = 0
+	//ppu.writeControl(0)
+	//ppu.writeMask(0)
+	//ppu.writeOAMAddress(0)
 }
 
 func NewPpu(cpu *CPU, cartridge *Cartridge) *PPU {
@@ -113,4 +126,8 @@ func NewPpu(cpu *CPU, cartridge *Cartridge) *PPU {
 	ppu.cartridge = cartridge
 	ppu.front = image.NewRGBA(image.Rect(0, 0, 256, 240))
 	return &ppu
+}
+
+func (ppu *PPU) Step() {
+
 }

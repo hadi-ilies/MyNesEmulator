@@ -84,3 +84,7 @@ func (bus *BUS) GetPpu() *PPU {
 func (bus *BUS) GetCartridge() *Cartridge {
 	return bus.cartridge
 }
+
+func (bus *BUS) GetMapper() *Mapper {
+	return bus.mapper
+}
