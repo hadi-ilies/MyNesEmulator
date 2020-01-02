@@ -2,6 +2,6 @@ package ui
 
 type View interface {
 	Start()
-	Update()
+	Update(dt float64)
 	End()
 }

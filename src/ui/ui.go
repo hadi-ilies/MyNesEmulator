@@ -55,10 +55,10 @@ func (ui *Ui) loadGame(gamePath string) {
 
 func (ui *Ui) displayView() {
 	timestamp := glfw.GetTime()
-	//difftime := timestamp - ui.timestamp
+	difftime := timestamp - ui.timestamp
 	ui.timestamp = timestamp
 	if ui.actualView != nil {
-		ui.actualView.Update()
+		ui.actualView.Update(difftime)
 	}
 }
 

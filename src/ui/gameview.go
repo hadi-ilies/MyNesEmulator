@@ -54,7 +54,7 @@ func (gameView *GameView) Start() {
 	// }
 }
 
-func (gameView *GameView) Update() {
+func (gameView *GameView) Update(dt float64) {
 	// if dt > 1 {
 	// 	dt = 0
 	// }
@@ -70,7 +70,7 @@ func (gameView *GameView) Update() {
 	// 	view.director.ShowMenu()
 	// }
 	//updateControllers(window, console) todo code this func
-	//console.StepSeconds(dt)
+	gameView.nes.Run(dt)
 	gl.BindTexture(gl.TEXTURE_2D, gameView.texture)
 	//oglEncap.SetTexture(gameView.nes.PixelBuffer()) //todo code the buffer
 	gameView.drawBuffer(gameView.ui.GetWindow().GetFramebufferSize())
