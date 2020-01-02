@@ -31,7 +31,6 @@ func (nes *Nes) GetComponents() *nescomponents.BUS {
 	return nes.bus
 }
 
-//todo return ppu pixel buffer
 func (nes *Nes) PixelBuffer() *image.RGBA {
 	return nes.bus.GetPpu().GetFront()
 }

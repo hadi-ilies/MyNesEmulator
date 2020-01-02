@@ -90,20 +90,45 @@ func (ppu *PPU) clock() {
 
 }
 
+//indexs ppumask
+const (
+	flagGrayscale          = iota // 0: color; 1: grayscale
+	flagShowLeftBackground        // 0: hide; 1: show
+	flagShowLeftSprites           // 0: hide; 1: show
+	flagShowBackground            // 0: hide; 1: show
+	flagShowSprites               // 0: hide; 1: show
+	flagRedTint                   // 0: normal; 1: emphasized
+	flagGreenTint                 // 0: normal; 1: emphasized
+	flagBlueTint                  // 0: normal; 1: emphasized
+)
+
 type PPU struct {
 	cpu       *CPU       //pointer on nes's Cpu
 	cartridge *Cartridge // the gamePAk
 	// storage variables
 	nameTable    [2][1024]byte
-	paletteTable [32]byte  //ram connected to ppu that strored the palace info there are 32 entries
-	oam          [256]byte // (Object Attribute Memory)
-	front        *image.RGBA
-	//back          *image.RGBA
+	paletteTable [32]byte    //ram connected to ppu that strored the palace info there are 32 entries
+	oam          [256]byte   // (Object Attribute Memory)
+	front        *image.RGBA // front ground that generate sprites
+	back         *image.RGBA // back ground
 
 	//circuit variable
 	Cycle    int    // 0-340 nb cycles
 	ScanLine int    // 0-261, 0-239=visible, 240=post, 241-260=vblank, 261=pre
 	Frame    uint64 // frame counter
+
+	// NMI flags/vars
+	nmiOccurred bool
+	nmiOutput   bool
+	nmiPrevious bool
+	nmiDelay    byte
+
+	// $2002 PPUSTATUS
+	flagSpriteZeroHit  bool
+	flagSpriteOverflow bool
+
+	// $2001 PPUMASK
+	ppuMask [8]byte
 }
 
 func (ppu *PPU) GetFront() *image.RGBA {
@@ -128,6 +153,39 @@ func NewPpu(cpu *CPU, cartridge *Cartridge) *PPU {
 	return &ppu
 }
 
-func (ppu *PPU) Step() {
+func (ppu *PPU) nmiChange() {
+	nmi := ppu.nmiOutput && ppu.nmiOccurred
+	if nmi && !ppu.nmiPrevious {
+		// TODO: this fixes some games but the delay shouldn't have to be so
+		// long, so the timings are off somewhere
+		ppu.nmiDelay = 15
+	}
+	ppu.nmiPrevious = nmi
 
+}
+
+// Start of vertical blanking: Set NMI_occurred in PPU to true.
+// End of vertical blanking, sometime in pre-render scanline: Set NMI_occurred to false.
+// Read PPUSTATUS: Return old status of NMI_occurred in bit 7, then set NMI_occurred to false.
+// Write to PPUCTRL: Set NMI_output to bit 7.
+func (ppu *PPU) setVerticalBlank() {
+	ppu.front, ppu.back = ppu.back, ppu.front
+	ppu.nmiOccurred = true
+	ppu.nmiChange()
+}
+
+func (ppu *PPU) clearVerticalBlank() {
+	ppu.nmiOccurred = false
+	ppu.nmiChange()
+}
+
+func (ppu *PPU) Step() {
+	// vblank logic
+	if ppu.ScanLine == 241 && ppu.Cycle == 1 {
+		ppu.setVerticalBlank()
+	}
+	if ppu.ScanLine == 261 && ppu.Cycle == 1 {
+		ppu.clearVerticalBlank()
+		ppu.flagSpriteZeroHit, ppu.flagSpriteOverflow = false, false
+	}
 }
