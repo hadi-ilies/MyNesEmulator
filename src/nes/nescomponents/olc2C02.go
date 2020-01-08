@@ -102,6 +102,16 @@ const (
 	flagBlueTint                  // 0: normal; 1: emphasized
 )
 
+//indexs ppuctrl
+const (
+	flagNameTable       = iota // 0: $2000; 1: $2400; 2: $2800; 3: $2C00
+	flagIncrement              // 0: add 1; 1: add 32
+	flagSpriteTable            // 0: $0000; 1: $1000; ignored in 8x16 mode
+	flagBackgroundTable        // 0: $0000; 1: $1000
+	flagSpriteSize             // 0: 8x8; 1: 8x16
+	flagMasterSlave            // 0: read EXT; 1: write EXT
+)
+
 type PPU struct {
 	cpu       *CPU       //pointer on nes's Cpu
 	cartridge *Cartridge // the gamePAk
@@ -111,6 +121,13 @@ type PPU struct {
 	oam          [256]byte   // (Object Attribute Memory)
 	front        *image.RGBA // front ground that generate sprites
 	back         *image.RGBA // back ground
+
+	// PPU registers
+	v uint16 // current vram address (15 bit)
+	t uint16 // temporary vram address (15 bit)
+	x byte   // fine x scroll (3 bit)
+	w byte   // write toggle (1 bit)
+	f byte   // even/odd frame flag (1 bit)
 
 	//circuit variable
 	Cycle    int    // 0-340 nb cycles
@@ -123,9 +140,26 @@ type PPU struct {
 	nmiPrevious bool
 	nmiDelay    byte
 
+	// background temporary variables
+	nameTableByte      byte
+	attributeTableByte byte
+	lowTileByte        byte
+	highTileByte       byte
+	tileData           uint64
+
+	// sprite temporary variables
+	spriteCount      int
+	spritePatterns   [8]uint32
+	spritePositions  [8]byte
+	spritePriorities [8]byte
+	spriteIndexes    [8]byte
+
 	// $2002 PPUSTATUS
 	flagSpriteZeroHit  bool
 	flagSpriteOverflow bool
+
+	// $2000 PPUCTRL
+	ppuCtrl [6]byte
 
 	// $2001 PPUMASK
 	ppuMask [8]byte
@@ -179,7 +213,167 @@ func (ppu *PPU) clearVerticalBlank() {
 	ppu.nmiChange()
 }
 
+func (ppu *PPU) isRenderingEnabled() bool {
+	return ppu.ppuMask[flagShowBackground] != 0 || ppu.ppuMask[flagShowSprites] != 0
+}
+
+func (ppu *PPU) fetchSpritePattern(i, row int) uint32 {
+	tile := ppu.oam[i*4+1]
+	attributes := ppu.oam[i*4+2]
+	var address uint16
+	if ppu.ppuCtrl[flagSpriteSize] == 0 {
+		if attributes&0x80 == 0x80 {
+			row = 7 - row
+		}
+		table := ppu.ppuCtrl[flagSpriteTable]
+		address = 0x1000*uint16(table) + uint16(tile)*16 + uint16(row)
+	} else {
+		if attributes&0x80 == 0x80 {
+			row = 15 - row
+		}
+		table := tile & 1
+		tile &= 0xFE
+		if row > 7 {
+			tile++
+			row -= 8
+		}
+		address = 0x1000*uint16(table) + uint16(tile)*16 + uint16(row)
+	}
+	a := (attributes & 3) << 2
+	lowTileByte := ppu.Read(address)
+	highTileByte := ppu.Read(address + 8)
+	var data uint32
+	for i := 0; i < 8; i++ {
+		var p1, p2 byte
+		if attributes&0x40 == 0x40 {
+			p1 = (lowTileByte & 1) << 0
+			p2 = (highTileByte & 1) << 1
+			lowTileByte >>= 1
+			highTileByte >>= 1
+		} else {
+			p1 = (lowTileByte & 0x80) >> 7
+			p2 = (highTileByte & 0x80) >> 6
+			lowTileByte <<= 1
+			highTileByte <<= 1
+		}
+		data <<= 4
+		data |= uint32(a | p1 | p2)
+	}
+	return data
+}
+
+func (ppu *PPU) evaluateSprites() {
+	var h int
+
+	if ppu.ppuCtrl[flagSpriteSize] == 0 {
+		h = 8
+	} else {
+		h = 16
+	}
+	count := 0
+	for i := 0; i < 64; i++ {
+		y := ppu.oam[i*4]
+		a := ppu.oam[i*4+2]
+		x := ppu.oam[i*4+3]
+		row := ppu.ScanLine - int(y)
+		if row < 0 || row >= h {
+			continue
+		}
+		if count < 8 {
+			ppu.spritePatterns[count] = ppu.fetchSpritePattern(i, row)
+			ppu.spritePositions[count] = x
+			ppu.spritePriorities[count] = (a >> 5) & 1
+			ppu.spriteIndexes[count] = byte(i)
+		}
+		count++
+	}
+	if count > 8 {
+		count = 8
+		ppu.flagSpriteOverflow = true
+	}
+	ppu.spriteCount = count
+}
+
+func (ppu *PPU) fetchNameTableByte() {
+	v := ppu.v
+	address := 0x2000 | (v & 0x0FFF)
+	ppu.nameTableByte = ppu.Read(address)
+}
+
+func (ppu *PPU) fetchAttributeTableByte() {
+	v := ppu.v
+	address := 0x23C0 | (v & 0x0C00) | ((v >> 4) & 0x38) | ((v >> 2) & 0x07)
+	shift := ((v >> 4) & 4) | (v & 2)
+	ppu.attributeTableByte = ((ppu.Read(address) >> shift) & 3) << 2
+}
+
+func (ppu *PPU) fetchLowTileByte() {
+	fineY := (ppu.v >> 12) & 7
+	table := ppu.ppuCtrl[flagBackgroundTable]
+	tile := ppu.ppuCtrl[ppu.nameTableByte]
+	address := 0x1000*uint16(table) + uint16(tile)*16 + fineY
+	ppu.lowTileByte = ppu.Read(address)
+}
+
+func (ppu *PPU) fetchHighTileByte() {
+	fineY := (ppu.v >> 12) & 7
+	table := ppu.ppuCtrl[flagBackgroundTable]
+	tile := ppu.nameTableByte
+	address := 0x1000*uint16(table) + uint16(tile)*16 + fineY
+	ppu.highTileByte = ppu.Read(address + 8)
+}
+
+func (ppu *PPU) storeTileData() {
+	var data uint32
+	for i := 0; i < 8; i++ {
+		a := ppu.attributeTableByte
+		p1 := (ppu.lowTileByte & 0x80) >> 7
+		p2 := (ppu.highTileByte & 0x80) >> 6
+		ppu.lowTileByte <<= 1
+		ppu.highTileByte <<= 1
+		data <<= 4
+		data |= uint32(a | p1 | p2)
+	}
+	ppu.tileData |= uint64(data)
+}
+
 func (ppu *PPU) Step() {
+	visibleLine := ppu.ScanLine < 240
+	preLine := ppu.ScanLine == 261
+	preFetchCycle := ppu.Cycle >= 321 && ppu.Cycle <= 336
+	visibleCycle := ppu.Cycle >= 1 && ppu.Cycle <= 256
+	fetchCycle := preFetchCycle || visibleCycle
+	renderLine := preLine || visibleLine
+
+	//background
+	if ppu.isRenderingEnabled() {
+		if visibleLine && visibleCycle {
+			//ppu.renderPixel()
+		}
+		if renderLine && fetchCycle {
+			ppu.tileData <<= 4
+			switch ppu.Cycle % 8 {
+			case 1:
+				ppu.fetchNameTableByte()
+			case 3:
+				ppu.fetchAttributeTableByte()
+			case 5:
+				ppu.fetchLowTileByte()
+			case 7:
+				ppu.fetchHighTileByte()
+			case 0:
+				ppu.storeTileData()
+			}
+		}
+	}
+	//sprite logic, forback logic
+	if ppu.isRenderingEnabled() && ppu.Cycle == 257 {
+		if visibleLine { //if scanline visible
+			ppu.evaluateSprites()
+		} else {
+			ppu.spriteCount = 0
+		}
+	}
 	// vblank logic
 	if ppu.ScanLine == 241 && ppu.Cycle == 1 {
 		ppu.setVerticalBlank()
