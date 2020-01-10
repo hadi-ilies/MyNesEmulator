@@ -40,7 +40,7 @@ func (nes *Nes) Step() uint64 {
 	ppuCycles := cpuCycles * 3
 	var i uint64 = 0
 	for ; i < ppuCycles; i++ {
-		nes.GetComponents().GetPpu().Step()
+		//nes.GetComponents().GetPpu().Step()
 		//nes.GetComponents().GetMapper().Step() //todo it depend the mapper search a fix for that, i have to test that on the other rep
 	}
 	// for i := 0; i < cpuCycles; i++ {
