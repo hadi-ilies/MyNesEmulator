@@ -8,28 +8,38 @@ import (
 
 //Comunication with main BUS
 func (cartridge *Cartridge) CpuWrite(address uint16, data byte) bool {
-	return cartridge.mapper.Write(address, data)
+	if address < 0x2000 {
+		return cartridge.mapper.Write(address, data)
+	}
+	return false
 }
 
 func (cartridge *Cartridge) CpuRead(address uint16, data *byte) bool {
-	*data = cartridge.mapper.Read(address)
-	if *data != 0 {
-		return true
+	if address < 0x2000 {
+		*data = cartridge.mapper.Read(address)
+		if *data != 0 {
+			return true
+		}
 	}
 	return false
 }
 
 //Comunication  with the second "PPU" BUS
 func (cartridge *Cartridge) PpuRead(address uint16, data *byte) bool {
-	*data = cartridge.mapper.Read(address)
-	if *data != 0 {
-		return true
+	if address < 0x2000 {
+		*data = cartridge.mapper.Read(address)
+		if *data != 0 {
+			return true
+		}
 	}
 	return false
 }
 
 func (cartridge *Cartridge) PpuWrite(address uint16, data byte) bool {
-	return cartridge.mapper.Write(address, data)
+	if address < 0x2000 {
+		return cartridge.mapper.Write(address, data)
+	}
+	return false
 }
 
 //The game "la cartouche"
