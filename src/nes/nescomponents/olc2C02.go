@@ -1,6 +1,8 @@
 package nescomponents
 
-import "image"
+import (
+	"image"
+)
 
 //cpu can read only 8 addrs form the ppu
 const (
@@ -337,6 +339,141 @@ func (ppu *PPU) storeTileData() {
 	ppu.tileData |= uint64(data)
 }
 
+// NTSC Timing Helper Functions
+
+func (ppu *PPU) incrementX() {
+	// increment hori(v)
+	// if coarse X == 31
+	if ppu.v&0x001F == 31 {
+		// coarse X = 0
+		ppu.v &= 0xFFE0
+		// switch horizontal nametable
+		ppu.v ^= 0x0400
+	} else {
+		// increment coarse X
+		ppu.v++
+	}
+}
+
+func (ppu *PPU) incrementY() {
+	// increment vert(v)
+	// if fine Y < 7
+	if ppu.v&0x7000 != 0x7000 {
+		// increment fine Y
+		ppu.v += 0x1000
+	} else {
+		// fine Y = 0
+		ppu.v &= 0x8FFF
+		// let y = coarse Y
+		y := (ppu.v & 0x03E0) >> 5
+		if y == 29 {
+			// coarse Y = 0
+			y = 0
+			// switch vertical nametable
+			ppu.v ^= 0x0800
+		} else if y == 31 {
+			// coarse Y = 0, nametable not switched
+			y = 0
+		} else {
+			// increment coarse Y
+			y++
+		}
+		// put coarse Y back into v
+		ppu.v = (ppu.v & 0xFC1F) | (y << 5)
+	}
+}
+
+func (ppu *PPU) copyX() {
+	// hori(v) = hori(t)
+	// v: .....F.. ...EDCBA = t: .....F.. ...EDCBA
+	ppu.v = (ppu.v & 0xFBE0) | (ppu.t & 0x041F)
+}
+
+func (ppu *PPU) copyY() {
+	// vert(v) = vert(t)
+	// v: .IHGF.ED CBA..... = t: .IHGF.ED CBA.....
+	ppu.v = (ppu.v & 0x841F) | (ppu.t & 0x7BE0)
+}
+
+func (ppu *PPU) fetchTileData() uint32 {
+	return uint32(ppu.tileData >> 32)
+}
+
+func (ppu *PPU) backgroundPixel() byte {
+	if ppu.ppuMask[flagShowBackground] == 0 {
+		return 0
+	}
+	data := ppu.fetchTileData() >> ((7 - ppu.x) * 4)
+	return byte(data & 0x0F)
+}
+
+func (ppu *PPU) spritePixel() (byte, byte) {
+	if ppu.ppuMask[flagShowSprites] == 0 {
+		return 0, 0
+	}
+	for i := 0; i < ppu.spriteCount; i++ {
+		offset := (ppu.Cycle - 1) - int(ppu.spritePositions[i])
+		if offset < 0 || offset > 7 {
+			continue
+		}
+		offset = 7 - offset
+		color := byte((ppu.spritePatterns[i] >> byte(offset*4)) & 0x0F)
+		if color%4 == 0 {
+			continue
+		}
+		return byte(i), color
+	}
+	return 0, 0
+}
+
+func (ppu *PPU) readPalette(address uint16) byte {
+	if address >= 16 && address%4 == 0 {
+		address -= 16
+	}
+	return ppu.paletteTable[address]
+}
+
+func (ppu *PPU) writePalette(address uint16, value byte) {
+	if address >= 16 && address%4 == 0 {
+		address -= 16
+	}
+	ppu.paletteTable[address] = value
+}
+
+func (ppu *PPU) renderPixel() {
+	x := ppu.Cycle - 1
+	y := ppu.ScanLine
+	var background byte = ppu.backgroundPixel()
+	i, sprite := ppu.spritePixel()
+	if x < 8 && ppu.ppuMask[flagShowLeftBackground] == 0 {
+		background = 0
+	}
+	if x < 8 && ppu.ppuMask[flagShowLeftSprites] == 0 {
+		sprite = 0
+	}
+	b := background%4 != 0
+	s := sprite%4 != 0
+	var color byte
+	if !b && !s {
+		color = 0
+	} else if !b && s {
+		color = sprite | 0x10
+	} else if b && !s {
+		color = background
+	} else {
+		if ppu.spriteIndexes[i] == 0 && x < 255 {
+			ppu.flagSpriteZeroHit = true
+		}
+		if ppu.spritePriorities[i] == 0 {
+			color = sprite | 0x10
+		} else {
+			color = background
+		}
+	}
+	c := Palette[ppu.readPalette(uint16(color))%64]
+	ppu.back.SetRGBA(x, y, c)
+}
+
 func (ppu *PPU) Step() {
 	visibleLine := ppu.ScanLine < 240
 	preLine := ppu.ScanLine == 261
@@ -348,7 +485,7 @@ func (ppu *PPU) Step() {
 	//background
 	if ppu.isRenderingEnabled() {
 		if visibleLine && visibleCycle {
-			//ppu.renderPixel()
+			ppu.renderPixel()
 		}
 		if renderLine && fetchCycle {
 			ppu.tileData <<= 4
@@ -363,6 +500,20 @@ func (ppu *PPU) Step() {
 				ppu.fetchHighTileByte()
 			case 0:
 				ppu.storeTileData()
+			}
+		}
+		if preLine && ppu.Cycle >= 280 && ppu.Cycle <= 304 {
+			ppu.copyY()
+		}
+		if renderLine {
+			if fetchCycle && ppu.Cycle%8 == 0 {
+				ppu.incrementX()
+			}
+			if ppu.Cycle == 256 {
+				ppu.incrementY()
+			}
+			if ppu.Cycle == 257 {
+				ppu.copyX()
 			}
 		}
 	}
