@@ -355,6 +355,7 @@ func NewPpu(bus *BUS) *PPU {
 	ppu.bus = bus
 	ppu.cartridge = bus.cartridge
 	ppu.front = image.NewRGBA(image.Rect(0, 0, 256, 240))
+	ppu.back = image.NewRGBA(image.Rect(0, 0, 256, 240))
 	return &ppu
 }
 
