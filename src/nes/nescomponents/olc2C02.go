@@ -344,9 +344,9 @@ func (ppu *PPU) Reset() {
 	ppu.Cycle = 340
 	ppu.ScanLine = 240
 	ppu.Frame = 0
-	//ppu.writeControl(0)
-	//ppu.writeMask(0)
-	//ppu.writeOAMAddress(0)
+	ppu.writeControl(0)
+	ppu.writeMask(0)
+	ppu.writeOAMAddress(0)
 }
 
 func NewPpu(bus *BUS) *PPU {
@@ -686,6 +686,7 @@ func (ppu *PPU) Step() {
 	//background
 	if ppu.isRenderingEnabled() {
 		if visibleLine && visibleCycle {
+			println("PPU is trying to render pixels")
 			ppu.renderPixel()
 		}
 		if renderLine && fetchCycle {
