@@ -1075,6 +1075,11 @@ func (cpu *CPU) cpuInterruptions(interruptMode byte) {
 	}
 }
 
+// triggerNMI causes a non-maskable interrupt to occur on the next cycle
+func (cpu *CPU) triggerNmi() {
+	cpu.interrupt = interruptNMI
+}
+
 // Reset resets the CPU to its initial powerup state
 func (cpu *CPU) reset() {
 	var flags byte = 0x24

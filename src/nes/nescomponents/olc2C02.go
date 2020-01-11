@@ -2,41 +2,188 @@ package nescomponents
 
 import (
 	"image"
+	"log"
 )
+
+//addr cpu instruc
+// $2000: PPUCTRL
+func (ppu *PPU) writeControl(value byte) {
+	ppu.ppuCtrl[flagNameTable] = (value >> 0) & 3
+	ppu.ppuCtrl[flagIncrement] = (value >> 2) & 1
+	ppu.ppuCtrl[flagSpriteTable] = (value >> 3) & 1
+	ppu.ppuCtrl[flagBackgroundTable] = (value >> 4) & 1
+	ppu.ppuCtrl[flagSpriteSize] = (value >> 5) & 1
+	ppu.ppuCtrl[flagMasterSlave] = (value >> 6) & 1
+	ppu.nmiOutput = (value>>7)&1 == 1
+	ppu.nmiChange()
+	// t: ....BA.. ........ = d: ......BA
+	ppu.t = (ppu.t & 0xF3FF) | ((uint16(value) & 0x03) << 10)
+}
+
+// $2001: PPUMASK
+func (ppu *PPU) writeMask(value byte) {
+	ppu.ppuMask[flagGrayscale] = (value >> 0) & 1
+	ppu.ppuMask[flagShowLeftBackground] = (value >> 1) & 1
+	ppu.ppuMask[flagShowLeftSprites] = (value >> 2) & 1
+	ppu.ppuMask[flagShowBackground] = (value >> 3) & 1
+	ppu.ppuMask[flagShowSprites] = (value >> 4) & 1
+	ppu.ppuMask[flagRedTint] = (value >> 5) & 1
+	ppu.ppuMask[flagGreenTint] = (value >> 6) & 1
+	ppu.ppuMask[flagBlueTint] = (value >> 7) & 1
+}
+
+func (ppu *PPU) boolToByte(b bool) byte {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+// $2002: PPUSTATUS
+func (ppu *PPU) readStatus() byte {
+	result := ppu.register & 0x1F
+	result |= ppu.boolToByte(ppu.flagSpriteOverflow) << 5
+	result |= ppu.boolToByte(ppu.flagSpriteZeroHit) << 6
+	if ppu.nmiOccurred {
+		result |= 1 << 7
+	}
+	ppu.nmiOccurred = false
+	ppu.nmiChange()
+	// w:                   = 0
+	ppu.w = 0
+	return result
+}
+
+// $2003: OAMADDR
+func (ppu *PPU) writeOAMAddress(value byte) {
+	ppu.oamAddress = value
+}
+
+// $2004: OAMDATA (read)
+func (ppu *PPU) readOamData() byte {
+	return ppu.oam[ppu.oamAddress]
+}
+
+// $2004: OAMDATA (write)
+func (ppu *PPU) writeOAMData(value byte) {
+	ppu.oam[ppu.oamAddress] = value
+	ppu.oamAddress++
+}
+
+// $2005: PPUSCROLL
+func (ppu *PPU) writeScroll(value byte) {
+	if ppu.w == 0 {
+		// t: ........ ...HGFED = d: HGFED...
+		// x:               CBA = d: .....CBA
+		// w:                   = 1
+		ppu.t = (ppu.t & 0xFFE0) | (uint16(value) >> 3)
+		ppu.x = value & 0x07
+		ppu.w = 1
+	} else {
+		// t: .CBA..HG FED..... = d: HGFEDCBA
+		// w:                   = 0
+		ppu.t = (ppu.t & 0x8FFF) | ((uint16(value) & 0x07) << 12)
+		ppu.t = (ppu.t & 0xFC1F) | ((uint16(value) & 0xF8) << 2)
+		ppu.w = 0
+	}
+}
+
+// $2006: PPUADDR
+func (ppu *PPU) writeAddress(value byte) {
+	if ppu.w == 0 {
+		// t: ..FEDCBA ........ = d: ..FEDCBA
+		// t: .X...... ........ = 0
+		// w:                   = 1
+		ppu.t = (ppu.t & 0x80FF) | ((uint16(value) & 0x3F) << 8)
+		ppu.w = 1
+	} else {
+		// t: ........ HGFEDCBA = d: HGFEDCBA
+		// v                    = t
+		// w:                   = 0
+		ppu.t = (ppu.t & 0xFF00) | uint16(value)
+		ppu.v = ppu.t
+		ppu.w = 0
+	}
+}
+
+// $2007: PPUDATA (read)
+func (ppu *PPU) readData() byte {
+	value := ppu.Read(ppu.v)
+	// emulate buffered reads
+	if ppu.v%0x4000 < 0x3F00 {
+		buffered := ppu.bufferedData
+		ppu.bufferedData = value
+		value = buffered
+	} else {
+		ppu.bufferedData = ppu.Read(ppu.v - 0x1000)
+	}
+	// increment address
+	if ppu.ppuCtrl[flagIncrement] == 0 {
+		ppu.v += 1
+	} else {
+		ppu.v += 32
+	}
+	return value
+}
+
+// $2007: PPUDATA (write)
+func (ppu *PPU) writeData(value byte) {
+	ppu.Write(ppu.v, value)
+	if ppu.ppuCtrl[flagIncrement] == 0 {
+		ppu.v += 1
+	} else {
+		ppu.v += 32
+	}
+}
+
+// $4014: OAMDMA
+func (ppu *PPU) writeDMA(value byte) {
+	address := uint16(value) << 8
+	for i := 0; i < 256; i++ {
+		ppu.oam[ppu.oamAddress] = ppu.bus.CpuRead(address)
+		ppu.oamAddress++
+		address++
+	}
+	ppu.bus.cpu.stall += 513
+	if ppu.bus.cpu.Cycles%2 == 1 {
+		ppu.bus.cpu.stall++
+	}
+}
 
 //cpu can read only 8 addrs form the ppu
 const (
-	control = 0x0000
-	Mask    = 0x0001
-	Status  = 0x0002
+	control = 0x2000
+	Mask    = 0x2001
+	Status  = 0x2002
 	//The OAM (Object Attribute Memory) is internal memory inside the PPU that contains a display
 	//list of up to 64 sprites, where each sprite's information occupies 4 bytes.
-	oamAddr = 0x0003
-	oamData = 0x0004
-	Scroll  = 0x0005
-	ppuAddr = 0x0006
-	ppuData = 0x0007
+	oamAddr = 0x2003
+	oamData = 0x2004
+	Scroll  = 0x2005
+	ppuAddr = 0x2006
+	ppuData = 0x2007
 )
 
 //Comunication with main BUS
 func (ppu *PPU) CpuWrite(address uint16, data byte) {
+	ppu.register = data
 	switch address {
 	case control:
-		break
+		ppu.writeControl(data)
 	case Mask:
-		break
-	case Status:
-		break
+		ppu.writeMask(data)
 	case oamAddr:
-		break
+		ppu.writeOAMAddress(data)
 	case oamData:
-		break
+		ppu.writeOAMData(data)
 	case Scroll:
-		break
+		ppu.writeScroll(data)
 	case ppuAddr:
-		break
+		ppu.writeAddress(data)
 	case ppuData:
-		break
+		ppu.writeData(data)
+	case 0x4014:
+		ppu.writeDMA(data)
 	}
 }
 
@@ -44,33 +191,53 @@ func (ppu *PPU) CpuRead(address uint16) byte {
 	var data byte = 0x00
 
 	switch address {
-	case control:
-		break
-	case Mask:
-		break
 	case Status:
-		break
-	case oamAddr:
-		break
+		data = ppu.readStatus()
 	case oamData:
-		break
-	case Scroll:
-		break
-	case ppuAddr:
-		break
+		data = ppu.readOamData()
 	case ppuData:
-		break
+		data = ppu.readData()
 	}
 	return data
 }
 
+//MIRROR ADDR
+var MirrorLookup = [...][4]uint16{
+	{0, 0, 1, 1},
+	{0, 1, 0, 1},
+	{0, 0, 0, 0},
+	{1, 1, 1, 1},
+	{0, 1, 2, 3},
+}
+
+func (ppu *PPU) mirrorAddress(mode byte, address uint16) uint16 {
+	address = (address - 0x2000) % 0x1000
+	table := address / 0x0400
+	offset := address % 0x0400
+	return 0x2000 + MirrorLookup[mode][table]*0x0400 + offset
+}
+
 //Comunication  with the second "PPU" BUS
 func (ppu *PPU) Read(address uint16) byte {
-	var data byte = 0x00
-	address &= 0x3FFF
+	// var data byte = 0x00
+	// address &= 0x3FFF
 
-	if ppu.cartridge.PpuRead(address, &data) {
+	// if ppu.cartridge.PpuRead(address, &data) {
 
+	// }
+	// return data
+	var data byte = 0
+	address = address % 0x4000
+	switch {
+	case address < 0x2000:
+		return ppu.cartridge.mapper.Read(address)
+	case address < 0x3F00:
+		mode := ppu.cartridge.mirror
+		data = ppu.nameTable[ppu.mirrorAddress(mode, address)%2048]
+	case address < 0x4000:
+		data = ppu.readPalette(address % 32)
+	default:
+		log.Fatalf("unhandled ppu memory read at address: 0x%04X", address)
 	}
 	return data
 }
@@ -86,10 +253,6 @@ func (ppu *PPU) Write(address uint16, data byte) {
 //picture processing units
 func (ppu *PPU) ConnectCartridge(cartridge *Cartridge) {
 	ppu.cartridge = cartridge
-}
-
-func (ppu *PPU) clock() {
-
 }
 
 //indexs ppumask
@@ -115,22 +278,22 @@ const (
 )
 
 type PPU struct {
-	cpu       *CPU       //pointer on nes's Cpu
+	bus       *BUS       //pointer on bus to get nes's Cpu
 	cartridge *Cartridge // the gamePAk
 	// storage variables
-	nameTable    [2][1024]byte
+	nameTable    [2048]byte  //[2][1024]byte
 	paletteTable [32]byte    //ram connected to ppu that strored the palace info there are 32 entries
 	oam          [256]byte   // (Object Attribute Memory)
 	front        *image.RGBA // front ground that generate sprites
 	back         *image.RGBA // back ground
 
 	// PPU registers
-	v uint16 // current vram address (15 bit)
-	t uint16 // temporary vram address (15 bit)
-	x byte   // fine x scroll (3 bit)
-	w byte   // write toggle (1 bit)
-	f byte   // even/odd frame flag (1 bit)
-
+	v        uint16 // current vram address (15 bit)
+	t        uint16 // temporary vram address (15 bit)
+	x        byte   // fine x scroll (3 bit)
+	w        byte   // write toggle (1 bit)
+	f        byte   // even/odd frame flag (1 bit)
+	register byte
 	//circuit variable
 	Cycle    int    // 0-340 nb cycles
 	ScanLine int    // 0-261, 0-239=visible, 240=post, 241-260=vblank, 261=pre
@@ -165,6 +328,12 @@ type PPU struct {
 
 	// $2001 PPUMASK
 	ppuMask [8]byte
+
+	// $2003 OAMADDR
+	oamAddress byte
+
+	// $2007 PPUDATA
+	bufferedData byte // for buffered reads
 }
 
 func (ppu *PPU) GetFront() *image.RGBA {
@@ -180,11 +349,11 @@ func (ppu *PPU) Reset() {
 	//ppu.writeOAMAddress(0)
 }
 
-func NewPpu(cpu *CPU, cartridge *Cartridge) *PPU {
+func NewPpu(bus *BUS) *PPU {
 	var ppu PPU
 
-	ppu.cpu = cpu
-	ppu.cartridge = cartridge
+	ppu.bus = bus
+	ppu.cartridge = bus.cartridge
 	ppu.front = image.NewRGBA(image.Rect(0, 0, 256, 240))
 	return &ppu
 }
@@ -474,7 +643,38 @@ func (ppu *PPU) renderPixel() {
 	ppu.back.SetRGBA(x, y, c)
 }
 
+// update updates Cycle, ScanLine and Frame counters
+func (ppu *PPU) update() {
+	if ppu.nmiDelay > 0 {
+		ppu.nmiDelay--
+		if ppu.nmiDelay == 0 && ppu.nmiOutput && ppu.nmiOccurred {
+			ppu.bus.cpu.triggerNmi()
+		}
+	}
+
+	if ppu.ppuMask[flagShowBackground] != 0 || ppu.ppuMask[flagShowSprites] != 0 {
+		if ppu.f == 1 && ppu.ScanLine == 261 && ppu.Cycle == 339 {
+			ppu.Cycle = 0
+			ppu.ScanLine = 0
+			ppu.Frame++
+			ppu.f ^= 1
+			return
+		}
+	}
+	ppu.Cycle++
+	if ppu.Cycle > 340 {
+		ppu.Cycle = 0
+		ppu.ScanLine++
+		if ppu.ScanLine > 261 {
+			ppu.ScanLine = 0
+			ppu.Frame++
+			ppu.f ^= 1
+		}
+	}
+}
+
 func (ppu *PPU) Step() {
+	ppu.update()
 	visibleLine := ppu.ScanLine < 240
 	preLine := ppu.ScanLine == 261
 	preFetchCycle := ppu.Cycle >= 321 && ppu.Cycle <= 336

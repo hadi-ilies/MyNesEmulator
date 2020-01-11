@@ -1,5 +1,7 @@
 package nescomponents
 
+import "log"
+
 // Mirroring Modes
 
 const (
@@ -26,33 +28,75 @@ func NewBus(cartridge *Cartridge) *BUS {
 	bus.cartridge = cartridge
 	bus.mapper = &cartridge.mapper
 	bus.cpu = NewCpu(&bus)
-	bus.ppu = NewPpu(bus.cpu, bus.cartridge)
+	bus.ppu = NewPpu(&bus)
 	bus.clockCounter = 0
 	return &bus
 }
 
 //BUS READ/WRITE
 func (bus *BUS) CpuWrite(address uint16, data byte) {
-	if bus.cartridge.CpuWrite(address, data) { //check cartrige addr
-		println("LOL i have made an optimization")
-	} else if address >= 0x0000 && address <= 0x1FFF { //8KB range
-		bus.cpuRam[address&0x07FF] = data
-	} else if address >= 0x2000 && address <= 0x3FFF {
-		bus.ppu.CpuWrite(address&0x0007, data)
+	//if bus.cartridge.CpuWrite(address, data) { //check cartrige addr
+	//	println("LOL i have made an optimization")
+	// if address >= 0x0000 && address <= 0x1FFF { //8KB range
+	// 	bus.cpuRam[address&0x0800] = data
+	// } else if address >= 0x2000 && address <= 0x3FFF {
+	// 	bus.ppu.CpuWrite(address&0x0007, data)
+	// }
+	switch {
+	case address < 0x2000:
+		bus.cpuRam[address%0x0800] = data
+	case address < 0x4000:
+		bus.ppu.CpuWrite(0x2000+address%8, data)
+	case address < 0x4014:
+		//mem.console.APU.writeRegister(address, data)
+	case address == 0x4014:
+		bus.ppu.CpuWrite(address, data)
+	case address == 0x4015:
+		//mem.console.APU.writeRegister(address, data)
+	case address == 0x4016:
+		//mem.console.Controller1.Write data)
+		//mem.console.Controller2.Write data)
+	case address == 0x4017:
+		//mem.console.APU.writeRegister(address, data)
+	case address < 0x6000:
+		// TODO: I/O registers
+	case address >= 0x6000:
+		//mem.console.(address, data)
+	default:
+		log.Fatalf("unhandled cpu memory write at address: 0x%04X", address)
 	}
 }
 
 func (bus *BUS) CpuRead(address uint16) byte {
 	var data byte = 0x00
 
-	if bus.cartridge.CpuRead(address, &data) { //check cartrige addr
-		println("LOL i have made another optimization")
-	} else if address >= 0x0000 && address <= 0x1FFF { //8KB range
-		data = bus.cpuRam[address&0x07FF]
-	} else if address >= 0x2000 && address <= 0x3FFF {
-		bus.ppu.CpuRead(address & 0x0007)
+	// if bus.cartridge.CpuRead(address, &data) { //check cartrige addr
+	// 	println("LOL i have made another optimization")
+	// } else if address >= 0x0000 && address <= 0x1FFF { //8KB range
+	// 	data = bus.cpuRam[address&0x07FF]
+	// } else if address >= 0x2000 && address <= 0x3FFF {
+	// 	bus.ppu.CpuRead(address & 0x0007)
+	// }
+	switch {
+	case address < 0x2000:
+		data = bus.cpuRam[address%0x0800]
+	case address < 0x4000:
+		data = bus.ppu.CpuRead(0x2000 + address%8)
+	case address == 0x4014:
+		data = bus.ppu.CpuRead(address)
+	case address == 0x4015:
+		//data = mem.console.APU.readRegister(address)
+	case address == 0x4016:
+		//data = mem.console.Controller1.Read()
+	case address == 0x4017:
+		//data = mem.console.Controller2.Read()
+	case address < 0x6000:
+		// TODO: I/O registers
+	case address >= 0x6000:
+		data = bus.cartridge.mapper.Read(address) //todo check mapper
+	default:
+		log.Fatalf("unhandled cpu memory read at address: 0x%04X", address)
 	}
-
 	return data
 }
 
