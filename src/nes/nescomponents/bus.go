@@ -26,7 +26,7 @@ func NewBus(cartridge *Cartridge) *BUS {
 	var bus BUS
 
 	bus.cartridge = cartridge
-	bus.mapper = &cartridge.mapper
+	bus.mapper = &cartridge.Mapper
 	bus.cpu = NewCpu(&bus)
 	bus.ppu = NewPpu(&bus)
 	bus.clockCounter = 0
@@ -93,7 +93,7 @@ func (bus *BUS) CpuRead(address uint16) byte {
 	case address < 0x6000:
 		// TODO: I/O registers
 	case address >= 0x6000:
-		data = bus.cartridge.mapper.Read(address) //todo check mapper
+		data = bus.cartridge.Mapper.Read(address) //todo check mapper
 	default:
 		log.Fatalf("unhandled cpu memory read at address: 0x%04X", address)
 	}
@@ -127,8 +127,4 @@ func (bus *BUS) GetPpu() *PPU {
 
 func (bus *BUS) GetCartridge() *Cartridge {
 	return bus.cartridge
-}
-
-func (bus *BUS) GetMapper() *Mapper {
-	return bus.mapper
 }

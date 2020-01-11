@@ -9,14 +9,14 @@ import (
 //Comunication with main BUS
 func (cartridge *Cartridge) CpuWrite(address uint16, data byte) bool {
 	if address < 0x2000 {
-		return cartridge.mapper.Write(address, data)
+		return cartridge.Mapper.Write(address, data)
 	}
 	return false
 }
 
 func (cartridge *Cartridge) CpuRead(address uint16, data *byte) bool {
 	if address < 0x2000 {
-		*data = cartridge.mapper.Read(address)
+		*data = cartridge.Mapper.Read(address)
 		if *data != 0 {
 			return true
 		}
@@ -28,7 +28,7 @@ func (cartridge *Cartridge) CpuRead(address uint16, data *byte) bool {
 func (cartridge *Cartridge) PpuRead(address uint16, data *byte) bool {
 	address = address % 0x4000
 	if address < 0x2000 {
-		*data = cartridge.mapper.Read(address)
+		*data = cartridge.Mapper.Read(address)
 		if *data != 0 {
 			return true
 		}
@@ -39,14 +39,14 @@ func (cartridge *Cartridge) PpuRead(address uint16, data *byte) bool {
 func (cartridge *Cartridge) PpuWrite(address uint16, data byte) bool {
 	address = address % 0x4000
 	if address < 0x2000 {
-		return cartridge.mapper.Write(address, data)
+		return cartridge.Mapper.Write(address, data)
 	}
 	return false
 }
 
 //The game "la cartouche"
 type Cartridge struct {
-	mapper     Mapper
+	Mapper     Mapper
 	prg        []byte // PRG-ROM banks
 	chr        []byte // CHR-ROM banks
 	sram       []byte // Save RAM
@@ -121,7 +121,7 @@ func NewCartridge(filename string) *Cartridge {
 	//load the mapper
 
 	var maperr error
-	cartridge.mapper, maperr = NewMapper(&cartridge)
+	cartridge.Mapper, maperr = NewMapper(&cartridge)
 	if maperr != nil {
 		println("call usage and exit")
 	}

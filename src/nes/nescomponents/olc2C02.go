@@ -230,7 +230,7 @@ func (ppu *PPU) Read(address uint16) byte {
 	address = address % 0x4000
 	switch {
 	case address < 0x2000:
-		return ppu.cartridge.mapper.Read(address)
+		return ppu.cartridge.Mapper.Read(address)
 	case address < 0x3F00:
 		mode := ppu.cartridge.mirror
 		data = ppu.nameTable[ppu.mirrorAddress(mode, address)%2048]
