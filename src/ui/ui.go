@@ -1,6 +1,8 @@
 package ui
 
 import (
+	//	"os"
+
 	"github.com/go-gl/gl/v2.1/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/hadi-ilies/MyNesEmulator/src/nes"
@@ -75,4 +77,5 @@ func (ui *Ui) Run(gamePath string) {
 		ui.window.SwapBuffers()
 		glfw.PollEvents()
 	}
+	ui.getInView(nil) //tmp maybe useless
 }

@@ -33,9 +33,9 @@ func Start(gamePath string) bool {
 	}
 	defer glfw.Terminate() //destroy all opengl stuff when func is terminated
 	//create the ui
-	//glfw.WindowHint(glfw.ContextVersionMajor, 2)
-	//glfw.WindowHint(glfw.ContextVersionMinor, 1)
-	ui := NewUI(constant.WindowWidth, constant.WindowHeight, constant.UITitle)
+	glfw.WindowHint(glfw.ContextVersionMajor, 2)
+	glfw.WindowHint(glfw.ContextVersionMinor, 1)
+	ui := NewUI(constant.WindowWidth*3, constant.WindowHeight*3, constant.UITitle) //3 == scale
 
 	if !initOpengl() {
 		return false

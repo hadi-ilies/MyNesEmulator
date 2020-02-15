@@ -2,6 +2,7 @@ package ui
 
 import (
 	"image"
+	//	"os"
 
 	oglEncap "./openglencapsulation" // import and rename the package openglencapsulation to oglEncap
 	"github.com/go-gl/gl/v2.1/gl"
@@ -55,9 +56,9 @@ func (gameView *GameView) Start() {
 }
 
 func (gameView *GameView) Update(dt float64) {
-	// if dt > 1 {
-	// 	dt = 0
-	// }
+	if dt > 1 {
+		dt = 0
+	}
 	//window := view.director.window
 	// console := view.console
 	// if joystickReset(glfw.Joystick1) {
@@ -72,7 +73,9 @@ func (gameView *GameView) Update(dt float64) {
 	//updateControllers(window, console) todo code this func
 	gameView.nes.Run(dt)
 	gl.BindTexture(gl.TEXTURE_2D, gameView.texture)
-	//oglEncap.SetTexture(gameView.nes.PixelBuffer()) //todo code the buffer
+	oglEncap.SetTexture(gameView.nes.PixelBuffer()) //todo code the buffer
+	// println("VIEW")
+	// os.Exit(0)
 	gameView.drawBuffer(gameView.ui.GetWindow().GetFramebufferSize())
 	gl.BindTexture(gl.TEXTURE_2D, 0)
 	if gameView.record {
