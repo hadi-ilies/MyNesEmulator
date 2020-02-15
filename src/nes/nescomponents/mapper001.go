@@ -38,13 +38,14 @@ func (mapper *Mapper1) Read(address uint16) byte {
 		address = address - 0x8000
 		bank := address / 0x4000
 		offset := address % 0x4000
+
 		return mapper.cartridge.prg[mapper.prgOffsets[bank]+int(offset)]
 	case address >= 0x6000:
 		return mapper.cartridge.sram[int(address)-0x6000]
 	default:
 		log.Fatalf("unhandled mapper1 read at address: 0x%04X", address)
 	}
-	return 0x00
+	return 0
 }
 
 func (mapper *Mapper1) Write(address uint16, value byte) bool {

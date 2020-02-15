@@ -1,6 +1,9 @@
 package nescomponents
 
-import "log"
+import (
+	// "os"
+	"log"
+)
 
 // Mirroring Modes
 
@@ -29,7 +32,7 @@ func NewBus(cartridge *Cartridge) *BUS {
 	bus.mapper = &cartridge.Mapper
 	bus.cpu = NewCpu(&bus)
 	bus.ppu = NewPpu(&bus)
-	bus.clockCounter = 0
+	//bus.clockCounter = 0
 	return &bus
 }
 
@@ -61,14 +64,14 @@ func (bus *BUS) CpuWrite(address uint16, data byte) {
 	case address < 0x6000:
 		// TODO: I/O registers
 	case address >= 0x6000:
-		//mem.console.(address, data)
+		bus.cartridge.Mapper.Write(address, data)
 	default:
 		log.Fatalf("unhandled cpu memory write at address: 0x%04X", address)
 	}
 }
 
 func (bus *BUS) CpuRead(address uint16) byte {
-	var data byte = 0x00
+	//var data byte = 0x00
 
 	// if bus.cartridge.CpuRead(address, &data) { //check cartrige addr
 	// 	println("LOL i have made another optimization")
@@ -79,31 +82,31 @@ func (bus *BUS) CpuRead(address uint16) byte {
 	// }
 	switch {
 	case address < 0x2000:
-		data = bus.cpuRam[address%0x0800]
+		return bus.cpuRam[address%0x0800]
 	case address < 0x4000:
-		data = bus.ppu.CpuRead(0x2000 + address%8)
+		return bus.ppu.CpuRead(0x2000 + address%8)
 	case address == 0x4014:
-		data = bus.ppu.CpuRead(address)
+		return bus.ppu.CpuRead(address)
 	case address == 0x4015:
-		//data = mem.console.APU.readRegister(address)
+		//return mem.console.APU.readRegister(address)
 	case address == 0x4016:
-		//data = mem.console.Controller1.Read()
+		//return mem.console.Controller1.Read()
 	case address == 0x4017:
-		//data = mem.console.Controller2.Read()
+		//return mem.console.Controller2.Read()
 	case address < 0x6000:
 		// TODO: I/O registers
 	case address >= 0x6000:
-		data = bus.cartridge.Mapper.Read(address) //todo check mapper
+		return bus.cartridge.Mapper.Read(address) //todo check mapper
 	default:
 		log.Fatalf("unhandled cpu memory read at address: 0x%04X", address)
 	}
-	return data
+	return 0
 }
 
 //System interface
 func (bus *BUS) Reset() {
-	bus.cpu.reset()      //reset cpu flags and clocks
-	bus.clockCounter = 0 // nb clock
+	bus.cpu.reset() //reset cpu flags and clocks
+	//bus.clockCounter = 0 // nb clock useless
 }
 
 func (bus *BUS) Clock() {

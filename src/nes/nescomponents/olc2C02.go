@@ -3,6 +3,7 @@ package nescomponents
 import (
 	"image"
 	"log"
+	"os"
 )
 
 //addr cpu instruc
@@ -44,6 +45,7 @@ func (ppu *PPU) readStatus() byte {
 	result := ppu.register & 0x1F
 	result |= ppu.boolToByte(ppu.flagSpriteOverflow) << 5
 	result |= ppu.boolToByte(ppu.flagSpriteZeroHit) << 6
+
 	if ppu.nmiOccurred {
 		result |= 1 << 7
 	}
@@ -188,17 +190,15 @@ func (ppu *PPU) CpuWrite(address uint16, data byte) {
 }
 
 func (ppu *PPU) CpuRead(address uint16) byte {
-	var data byte = 0x00
-
 	switch address {
 	case Status:
-		data = ppu.readStatus()
+		return ppu.readStatus()
 	case oamData:
-		data = ppu.readOamData()
+		return ppu.readOamData()
 	case ppuData:
-		data = ppu.readData()
+		return ppu.readData()
 	}
-	return data
+	return 0
 }
 
 //MIRROR ADDR
@@ -226,27 +226,34 @@ func (ppu *PPU) Read(address uint16) byte {
 
 	// }
 	// return data
-	var data byte = 0
+	//var data byte = 0
 	address = address % 0x4000
 	switch {
 	case address < 0x2000:
 		return ppu.cartridge.Mapper.Read(address)
 	case address < 0x3F00:
 		mode := ppu.cartridge.mirror
-		data = ppu.nameTable[ppu.mirrorAddress(mode, address)%2048]
+		return ppu.nameTable[ppu.mirrorAddress(mode, address)%2048]
 	case address < 0x4000:
-		data = ppu.readPalette(address % 32)
+		return ppu.readPalette(address % 32)
 	default:
 		log.Fatalf("unhandled ppu memory read at address: 0x%04X", address)
 	}
-	return data
+	return 0
 }
 
 func (ppu *PPU) Write(address uint16, data byte) {
-	address &= 0x3FFF
-
-	if ppu.cartridge.PpuWrite(address, data) {
-
+	address = address % 0x4000
+	switch {
+	case address < 0x2000:
+		ppu.cartridge.Mapper.Write(address, data)
+	case address < 0x3F00:
+		mode := ppu.cartridge.mirror
+		ppu.nameTable[ppu.mirrorAddress(mode, address)%2048] = data
+	case address < 0x4000:
+		ppu.writePalette(address%32, data)
+	default:
+		log.Fatalf("unhandled ppu memory write at address: 0x%04X", address)
 	}
 }
 
@@ -356,6 +363,7 @@ func NewPpu(bus *BUS) *PPU {
 	ppu.cartridge = bus.cartridge
 	ppu.front = image.NewRGBA(image.Rect(0, 0, 256, 240))
 	ppu.back = image.NewRGBA(image.Rect(0, 0, 256, 240))
+	ppu.Reset()
 	return &ppu
 }
 
@@ -462,6 +470,7 @@ func (ppu *PPU) evaluateSprites() {
 	if count > 8 {
 		count = 8
 		ppu.flagSpriteOverflow = true
+		os.Exit(99) // todo debug this it is not supposed to enter in this cond
 	}
 	ppu.spriteCount = count
 }
@@ -482,7 +491,7 @@ func (ppu *PPU) fetchAttributeTableByte() {
 func (ppu *PPU) fetchLowTileByte() {
 	fineY := (ppu.v >> 12) & 7
 	table := ppu.ppuCtrl[flagBackgroundTable]
-	tile := ppu.ppuCtrl[ppu.nameTableByte]
+	tile := ppu.nameTableByte
 	address := 0x1000*uint16(table) + uint16(tile)*16 + fineY
 	ppu.lowTileByte = ppu.Read(address)
 }
@@ -686,7 +695,6 @@ func (ppu *PPU) Step() {
 	//background
 	if ppu.isRenderingEnabled() {
 		if visibleLine && visibleCycle {
-			println("PPU is trying to render pixels")
 			ppu.renderPixel()
 		}
 		if renderLine && fetchCycle {
