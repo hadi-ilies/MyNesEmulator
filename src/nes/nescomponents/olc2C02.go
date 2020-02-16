@@ -6,6 +6,8 @@ import (
 	"os"
 )
 
+//NOTE: still dont get why it was not working check memo in ~/
+
 //addr cpu instruc
 // $2000: PPUCTRL
 func (ppu *PPU) writeControl(value byte) {
@@ -121,7 +123,7 @@ func (ppu *PPU) readData() byte {
 	}
 	// increment address
 	if ppu.ppuCtrl[flagIncrement] == 0 {
-		ppu.v += 1
+		ppu.v++
 	} else {
 		ppu.v += 32
 	}
@@ -132,7 +134,7 @@ func (ppu *PPU) readData() byte {
 func (ppu *PPU) writeData(value byte) {
 	ppu.Write(ppu.v, value)
 	if ppu.ppuCtrl[flagIncrement] == 0 {
-		ppu.v += 1
+		ppu.v++
 	} else {
 		ppu.v += 32
 	}
@@ -201,7 +203,9 @@ func (ppu *PPU) CpuRead(address uint16) byte {
 	return 0
 }
 
-//MIRROR ADDR
+//NOTE: Memory Mirroring is when the same memory may be accessed at multiple addresses, causing an apparent duplication.
+
+//MirrorLookup lol
 var MirrorLookup = [...][4]uint16{
 	{0, 0, 1, 1},
 	{0, 1, 0, 1},
@@ -219,15 +223,7 @@ func (ppu *PPU) mirrorAddress(mode byte, address uint16) uint16 {
 
 //Comunication  with the second "PPU" BUS
 func (ppu *PPU) Read(address uint16) byte {
-	// var data byte = 0x00
-	// address &= 0x3FFF
-
-	// if ppu.cartridge.PpuRead(address, &data) {
-
-	// }
-	// return data
-	//var data byte = 0
-	address = address % 0x4000
+	address %= 0x4000
 	switch {
 	case address < 0x2000:
 		return ppu.cartridge.Mapper.Read(address)
@@ -243,7 +239,7 @@ func (ppu *PPU) Read(address uint16) byte {
 }
 
 func (ppu *PPU) Write(address uint16, data byte) {
-	address = address % 0x4000
+	address %= 0x4000
 	switch {
 	case address < 0x2000:
 		ppu.cartridge.Mapper.Write(address, data)
@@ -288,7 +284,7 @@ type PPU struct {
 	bus       *BUS       //pointer on bus to get nes's Cpu
 	cartridge *Cartridge // the gamePAk
 	// storage variables
-	nameTable    [2048]byte  //[2][1024]byte
+	nameTable    [2048]byte  //[2][1024]byte A nametable is a 1024 byte area of memory used by the PPU to lay out backgrounds. Each byte in the nametable controls one 8x8 pixel character cell, and each nametable has 30 rows of 32 tiles each, for 960 ($3C0) bytes; the rest is used by each nametable's attribute table. With each tile being 8x8 pixels, this makes a total of 256x240 pixels in one map, the same size as one full screen.
 	paletteTable [32]byte    //ram connected to ppu that strored the palace info there are 32 entries
 	oam          [256]byte   // (Object Attribute Memory)
 	front        *image.RGBA // front ground that generate sprites
@@ -356,6 +352,7 @@ func (ppu *PPU) Reset() {
 	ppu.writeOAMAddress(0)
 }
 
+//NewPpu ppu constructor
 func NewPpu(bus *BUS) *PPU {
 	var ppu PPU
 
@@ -397,6 +394,7 @@ func (ppu *PPU) isRenderingEnabled() bool {
 	return ppu.ppuMask[flagShowBackground] != 0 || ppu.ppuMask[flagShowSprites] != 0
 }
 
+//https://wiki.nesdev.com/w/index.php/PPU_attribute_tables tricky master
 func (ppu *PPU) fetchSpritePattern(i, row int) uint32 {
 	tile := ppu.oam[i*4+1]
 	attributes := ppu.oam[i*4+2]
@@ -506,6 +504,7 @@ func (ppu *PPU) fetchHighTileByte() {
 
 func (ppu *PPU) storeTileData() {
 	var data uint32
+
 	for i := 0; i < 8; i++ {
 		a := ppu.attributeTableByte
 		p1 := (ppu.lowTileByte & 0x80) >> 7
@@ -586,6 +585,7 @@ func (ppu *PPU) backgroundPixel() byte {
 	return byte(data & 0x0F)
 }
 
+//https://wiki.nesdev.com/w/index.php/PPU_attribute_tables tricky master
 func (ppu *PPU) spritePixel() (byte, byte) {
 	if ppu.ppuMask[flagShowSprites] == 0 {
 		return 0, 0
