@@ -5,14 +5,6 @@ import (
 	"os"
 )
 
-// interrupt types
-const (
-	_ = iota
-	interruptNone
-	interruptNMI
-	interruptIRQ
-)
-
 // pagesDiffer returns true if the two addresses reference different pages
 func pagesDiffer(a uint16, b uint16) bool {
 	return a&0xFF00 != b&0xFF00
@@ -50,40 +42,32 @@ func (cpu *CPU) read16bug(address uint16) uint16 {
 	return uint16(hi)<<8 | uint16(lo)
 }
 
-//function that corespond to the execution of an instruction
+//prototype function that corespond to the execution of an instruction
 type execinstructions func(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool)
 
-//_____________________________________________________________________________________________________________________
+//________________________________________________addr modes of each instruction______________________________________________________________
 
-//addr modes of each instruction
+//prototype addr modes of each instruction
 type addrModes func(cpu *CPU) uint16
 
 func abs(cpu *CPU) uint16 {
-	var address uint16 = cpu.Read16(cpu.PC + 1)
-
-	return address
+	return cpu.Read16(cpu.PC + 1)
 }
 
 func absX(cpu *CPU) uint16 {
-	var address uint16 = cpu.Read16(cpu.PC+1) + uint16(cpu.X)
-
-	return address
+	return cpu.Read16(cpu.PC+1) + uint16(cpu.X)
 }
 
 func absY(cpu *CPU) uint16 {
-	var address uint16 = cpu.Read16(cpu.PC+1) + uint16(cpu.Y)
-
-	return address
+	return cpu.Read16(cpu.PC+1) + uint16(cpu.Y)
 }
 
 func accumulator(cpu *CPU) uint16 {
-	var address uint16 = 0
-	return address
+	return 0
 }
 
 func immediate(cpu *CPU) uint16 {
-	var address uint16 = cpu.PC + 1
-	return address
+	return cpu.PC + 1
 }
 
 func implied(cpu *CPU) uint16 {
@@ -91,20 +75,15 @@ func implied(cpu *CPU) uint16 {
 }
 
 func indexedIndirect(cpu *CPU) uint16 {
-	var address uint16 = cpu.read16bug(uint16(cpu.bus.CpuRead(cpu.PC+1) + cpu.X))
-
-	return address
+	return cpu.read16bug(uint16(cpu.bus.CpuRead(cpu.PC+1) + cpu.X))
 }
 
 func indirect(cpu *CPU) uint16 {
-	var address uint16 = cpu.read16bug(cpu.Read16(cpu.PC + 1))
-
-	return address
+	return cpu.read16bug(cpu.Read16(cpu.PC + 1))
 }
 
 func indirectIndexed(cpu *CPU) uint16 {
-	var address uint16 = cpu.read16bug(uint16(cpu.bus.CpuRead(cpu.PC+1))) + uint16(cpu.Y)
-	return address
+	return cpu.read16bug(uint16(cpu.bus.CpuRead(cpu.PC+1))) + uint16(cpu.Y)
 }
 
 func relative(cpu *CPU) uint16 {
@@ -118,265 +97,18 @@ func relative(cpu *CPU) uint16 {
 }
 
 func zeroPage(cpu *CPU) uint16 {
-	var address uint16 = uint16(cpu.bus.CpuRead(cpu.PC + 1))
-
-	return address
+	return uint16(cpu.bus.CpuRead(cpu.PC + 1))
 }
 
 func zeroPageX(cpu *CPU) uint16 {
-	var address uint16 = uint16(cpu.bus.CpuRead(cpu.PC+1)+cpu.X) & 0xff
-
-	return address
+	return  uint16(cpu.bus.CpuRead(cpu.PC+1)+cpu.X) & 0xff
 }
 
 func zeroPageY(cpu *CPU) uint16 {
-	var address uint16 = uint16(cpu.bus.CpuRead(cpu.PC+1)+cpu.Y) & 0xff
-	return address
+	return uint16(cpu.bus.CpuRead(cpu.PC+1)+cpu.Y) & 0xff
 }
 
 //___________________________________________________ instructions functions__________________________________________________________________
-
-// // break instruction which means force interrupt
-// func brk(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	high := byte(cpu.PC >> 8)
-// 	low := byte(cpu.PC & 0xFF)
-
-// 	cpu.bus.CpuWrite(0x100|uint16(cpu.SP), high)
-// 	cpu.SP--
-// 	cpu.bus.CpuWrite(0x100|uint16(cpu.SP), low)
-// 	cpu.SP--
-// 	php(cpu, address, pc, isAnAccumulator)
-// 	sei(cpu, address, pc, isAnAccumulator)
-// 	cpu.PC = cpu.Read16(0xFFFE)
-// }
-
-// // ORA - Logical Inclusive OR on the accumulator
-// func ora(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.A |= cpu.bus.CpuRead(address)
-// 	cpu.setZ(cpu.A)
-// 	cpu.setN(cpu.A)
-// 	//os.Exit(9)
-// }
-
-// // PHP - Push Processor Status
-// // Instruction: Push Status Register to Stack
-// // Function:    status -> stack
-// // Note:        Break flag is set to 1 before push
-// func php(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	var currentFlags byte
-
-// 	currentFlags |= cpu.C << 0
-// 	currentFlags |= cpu.Z << 1
-// 	currentFlags |= cpu.I << 2
-// 	currentFlags |= cpu.D << 3
-// 	currentFlags |= cpu.B << 4
-// 	currentFlags |= cpu.U << 5
-// 	currentFlags |= cpu.V << 6
-// 	currentFlags |= cpu.N << 7
-
-// 	// push all current cpu flags bytes into the stack
-// 	// 0x100 + uint16(cpu.SP) works too
-// 	cpu.bus.CpuWrite(0x100|uint16(cpu.SP), currentFlags|0x10)
-// 	cpu.SP--
-// }
-
-// //branch if position
-// // Instruction: Branch if Positive
-// // Function:    if(N == 0) pc = address
-// func bpl(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	if cpu.N == 0 {
-// 		cpu.PC = address
-// 		// adds a cycle for taking a branch and adds another cycle
-// 		// if the branch jumps to a new page
-// 		cpu.Cycles++
-// 		//addrAbs := pc + address
-
-// 		//if the two addresses reference different pages
-// 		if pagesDiffer(pc, address) {
-// 			cpu.Cycles++
-// 		}
-// 		//pc = addrAbs //Todo should i save the new addr ???
-
-// 	}
-// }
-
-// //carry clear
-// // Instruction: Clear Carry Flag
-// // Function:    C = 0
-// func clc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.C = 0
-// }
-
-// // JSR - Jump to Subroutine
-// func jsr(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	value := cpu.PC - 1
-// 	// push two bytes onto the stack
-// 	//extract the first byte
-// 	high := byte(value >> 8)
-// 	//extract the second
-// 	low := byte(value & 0xFF)
-// 	//write bytes on bus
-// 	cpu.bus.CpuWrite(0x100|uint16(cpu.SP), high)
-// 	cpu.SP--
-// 	cpu.bus.CpuWrite(0x100|uint16(cpu.SP), low)
-// 	cpu.SP--
-// 	cpu.PC = address
-// 	if (cpu.Cycles*3)%341 > 400 {
-// 		//os.Exit(9)
-// 	}
-// }
-
-// //this instruction is simply an 'and' logic gate
-// func and(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	test := cpu.bus.CpuRead(address)
-// 	println("ADDR TEST = ", test, " CPU.A = ", cpu.A)
-// 	cpu.A &= test
-// 	cpu.setZ(cpu.A)
-// 	cpu.setN(cpu.A)
-// }
-
-// // ROR - Rotate Right
-// func rol(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	var c byte = cpu.C
-
-// 	if isAnAccumulator {
-// 		cpu.C = (cpu.A >> 7) & 1
-// 		cpu.A = (cpu.A << 1) | c
-// 		cpu.setZ(cpu.A)
-// 		cpu.setN(cpu.A)
-// 	} else {
-// 		var value byte = cpu.bus.CpuRead(address)
-
-// 		cpu.C = (value >> 7) & 1
-// 		value = (value << 1) | c
-// 		cpu.bus.CpuWrite(address, value)
-// 		cpu.setZ(value)
-// 		cpu.setN(value)
-// 	}
-// }
-
-// // PLP - Pull Processor Status
-// func plp(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	var flags byte = cpu.pull()&0xEF | 0x20
-
-// 	cpu.C = (flags >> 0) & 1
-// 	cpu.Z = (flags >> 1) & 1
-// 	cpu.I = (flags >> 2) & 1
-// 	cpu.D = (flags >> 3) & 1
-// 	cpu.B = (flags >> 4) & 1
-// 	cpu.U = (flags >> 5) & 1
-// 	cpu.V = (flags >> 6) & 1
-// 	cpu.N = (flags >> 7) & 1
-
-// }
-
-// //branch if minus
-// //Instruction: Branch if Negative
-// // Function:    if(N == 1) pc = address
-// func bmi(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	if cpu.N == 1 {
-// 		cpu.PC = address
-// 		// adds a cycle for taking a branch and adds another cycle
-// 		// if the branch jumps to a new page
-// 		cpu.Cycles++
-// 		//addrAbs := pc + address
-
-// 		//if the two addresses reference different pages
-// 		if pagesDiffer(pc, address) {
-// 			cpu.Cycles++
-// 		}
-// 		//pc = addrAbs //Todo should i save the new addr ???
-
-// 	}
-// }
-
-// // set carry
-// // SEC - Set Carry Flag
-// func sec(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.C = 1
-// }
-
-// // RTI - Return from Interrupt
-// func rti(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	var flags byte = cpu.pull()&0xEF | 0x20
-
-// 	cpu.C = (flags >> 0) & 1
-// 	cpu.Z = (flags >> 1) & 1
-// 	cpu.I = (flags >> 2) & 1
-// 	cpu.D = (flags >> 3) & 1
-// 	cpu.B = (flags >> 4) & 1
-// 	cpu.U = (flags >> 5) & 1
-// 	cpu.V = (flags >> 6) & 1
-// 	cpu.N = (flags >> 7) & 1
-// 	cpu.PC = cpu.pull16()
-// }
-
-// // EOR - Exclusive OR
-// func eor(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.A = cpu.A ^ cpu.bus.CpuRead(address)
-// 	cpu.setZ(cpu.A)
-// 	cpu.setN(cpu.A)
-// }
-
-// // LSR - Logical Shift Right
-// func lsr(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	if isAnAccumulator {
-// 		cpu.C = cpu.A & 1
-// 		cpu.A >>= 1
-// 		cpu.setZ(cpu.A)
-// 		cpu.setN(cpu.A)
-// 	} else {
-// 		var value byte = cpu.bus.CpuRead(address)
-
-// 		cpu.C = value & 1
-// 		value >>= 1
-// 		cpu.bus.CpuWrite(address, value)
-// 		cpu.setZ(value)
-// 		cpu.setN(value)
-// 	}
-// }
-
-// // PHA - Push Accumulator
-// // Instruction: Push Accumulator to Stack
-// // Function:    A -> stack write function allow me to access to the BUS
-// func pha(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	// push A byte into the stack
-// 	// 0x100 + uint16(cpu.SP) works too
-// 	cpu.bus.CpuWrite(0x100|uint16(cpu.SP), cpu.A)
-// 	cpu.SP--
-// }
-
-// //branch if overflow clear
-// // Instruction: Branch if Overflow Clear
-// // Function:    if(V == 0) pc = address
-// func bvc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	if cpu.V == 0 {
-// 		cpu.PC = address
-// 		// adds a cycle for taking a branch and adds another cycle
-// 		// if the branch jumps to a new page
-// 		cpu.Cycles++
-// 		//addrAbs := pc + address
-
-// 		//if the two addresses reference different pages
-// 		if pagesDiffer(pc, address) {
-// 			cpu.Cycles++
-// 		}
-// 		//pc = addrAbs //Todo should i save the new addr ???
-
-// 	}
-// }
-
-// // Instruction: Disable Interrupts / Clear Interrupt Flag
-// // Function:    I = 0
-// func cli(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.I = 0
-// }
-
-// // RTS - Return from Subroutine
-// func rts(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.PC = cpu.pull16() + 1
-
-// }
 
 // Instruction: Add with Carry In
 // Function:    A = A + M + C
@@ -444,10 +176,11 @@ func adc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 	var m byte = cpu.bus.CpuRead(address)
 	var c byte = cpu.C
 
-	cpu.A = a + m + c
+	cpu.A += m + c
 	cpu.setZN(cpu.A)
 
 	//we write "int(a)+int(b)+int(c)" instead of cpu.A because cpu.A is a byte and CANT be over 255
+	//if accumulator overflow
 	if int(a)+int(m)+int(c) > 0xFF {
 		cpu.C = 1
 	} else {
@@ -459,510 +192,6 @@ func adc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 		cpu.V = 0
 	}
 }
-
-// // ROR - Rotate Right
-// func ror(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	var c byte = cpu.C
-
-// 	if isAnAccumulator {
-// 		cpu.C = cpu.A & 1
-// 		cpu.A = (cpu.A >> 1) | (c << 7)
-// 		cpu.setZ(cpu.A)
-// 		cpu.setN(cpu.A)
-// 	} else {
-// 		var value byte = cpu.bus.CpuRead(address)
-
-// 		cpu.C = value & 1
-// 		value = (value >> 1) | (c << 7)
-// 		cpu.bus.CpuWrite(address, value)
-// 		cpu.setZ(value)
-// 		cpu.setN(value)
-// 	}
-// }
-
-// // PLA - Pull Accumulator
-// func pla(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.A = cpu.pull()
-// 	cpu.setZ(cpu.A)
-// 	cpu.setN(cpu.A)
-// }
-
-// // Instruction: Jump To Location
-// // Function:    pc = address
-// func jmp(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.PC = address
-// }
-
-// // Instruction: Branch if Overflow Set
-// // Function:    if(V == 1) pc = address
-// func bvs(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	if cpu.V == 1 {
-// 		cpu.PC = address
-// 		// adds a cycle for taking a branch and adds another cycle
-// 		// if the branch jumps to a new page
-// 		cpu.Cycles++
-// 		//addrAbs := pc + address
-
-// 		//if the two addresses reference different pages
-// 		if pagesDiffer(pc, address) {
-// 			cpu.Cycles++
-// 		}
-// 		//pc = addrAbs //Todo should i save the new addr ???
-// 	}
-// }
-
-// // SEI - Set Interrupt Disable
-// func sei(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.I = 1
-// }
-
-// // STA - Store Accumulator
-// func sta(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	println("STA CPU.A = ", cpu.A, " STA ADDR = ", address)
-// 	cpu.bus.CpuWrite(address, cpu.A)
-// }
-
-// //DEY - Decrement Y Register
-
-// func dey(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.Y--
-// 	cpu.setZ(cpu.Y)
-// 	cpu.setN(cpu.Y)
-// }
-
-// // TXA - Transfer X register to Accumulator
-// func txa(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.A = cpu.X
-// 	cpu.setZ(cpu.A)
-// 	cpu.setN(cpu.A)
-// }
-
-// // STY - Store Y Register
-// func sty(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.bus.CpuWrite(address, cpu.Y)
-// }
-
-// // STX - Store X Register
-// func stx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.bus.CpuWrite(address, cpu.X)
-// }
-
-// //this function branch if the carry is clear
-// func bcc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	if cpu.C == 0 {
-// 		cpu.PC = address
-// 		// adds a cycle for taking a branch and adds another cycle
-// 		// if the branch jumps to a new page
-// 		cpu.Cycles++
-// 		//addrAbs := pc + address
-
-// 		//if the two addresses reference different pages
-// 		if pagesDiffer(pc, address) {
-// 			cpu.Cycles++
-// 		}
-// 		//pc = addrAbs //Todo should i save the new addr ???
-
-// 	}
-// }
-
-// //transfer y register to Accumulator
-// func tya(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.A = cpu.Y
-// 	cpu.setZ(cpu.A)
-// 	cpu.setN(cpu.A)
-
-// }
-
-// //TXS transfer X register to stack pointer
-// func txs(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.SP = cpu.X
-// }
-
-// //TAS transfer accumulator to stack pointer
-// func tas(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	//cpu.SP = cpu.A check github foogleeman
-// }
-
-// // LDY - Load Y Register
-// func ldy(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.Y = cpu.bus.CpuRead(address)
-// 	cpu.setZ(cpu.Y)
-// 	cpu.setN(cpu.Y)
-// }
-
-// // LDA - Load Accumulator
-// func lda(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	println("BEFORE LDA CPU.A = ", cpu.A, " ADDR = ", address)
-// 	cpu.A = cpu.bus.CpuRead(address)
-// 	println("AFTER LDA CPU.A = ", cpu.A, " ADDR = ", address)
-// 	cpu.setZ(cpu.A)
-// 	cpu.setN(cpu.A)
-// }
-
-// // LDX - Load X Register
-// func ldx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.X = cpu.bus.CpuRead(address)
-// 	//println("X = ", cpu.X)
-// 	//os.Exit(0)
-// 	cpu.setZ(cpu.X)
-// 	cpu.setN(cpu.X)
-
-// }
-
-// // TAY - Transfer Accumulator to Y register
-// func tay(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.Y = cpu.A
-// 	cpu.setZ(cpu.Y)
-// 	cpu.setN(cpu.Y)
-// }
-
-// // TAX - Transfer Accumulator to X register
-// func tax(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.X = cpu.A
-// 	cpu.setZ(cpu.X)
-// 	cpu.setN(cpu.X)
-// }
-
-// // Instruction: Branch if Carry Set
-// // Function:    if(C == 1) pc = address
-// func bcs(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	if cpu.C == 1 {
-// 		println("CHECK = ", cpu.C)
-// 		os.Exit(90)
-// 		cpu.PC = address
-// 		// adds a cycle for taking a branch and adds another cycle
-// 		// if the branch jumps to a new page
-// 		cpu.Cycles++
-// 		//addrAbs := pc + address
-
-// 		//if the two addresses reference different pages
-// 		//if (addrAbs & 0xFF00) != (pc & 0xFF00) {
-// 		if pagesDiffer(pc, address) {
-// 			cpu.Cycles++
-// 		}
-// 		//pc = addrAbs //Todo should i save the new addr ???
-// 	}
-
-// }
-
-// // Instruction: Clear Overflow Flag
-// // Function:    V = 0
-// func clv(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.V = 0
-// }
-
-// //TSX transfer stackpointer to X register
-// func tsx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.X = cpu.SP
-// 	cpu.setZ(cpu.X)
-// 	cpu.setN(cpu.X)
-// }
-
-// // Instruction: Compare Y Register
-// // Function:    C <- Y >= M      Z <- (Y - M) == 0
-// // Flags Out:   N, C, Z
-// func cpy(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	var value byte = cpu.bus.CpuRead(address)
-
-// 	cpu.setZ(cpu.Y - value)
-// 	cpu.setN(cpu.Y - value)
-// 	if cpu.Y >= value {
-// 		cpu.C = 1
-// 	} else {
-// 		cpu.C = 0
-// 	}
-
-// }
-
-// // Instruction: Compare Accumulator
-// // Function:    C <- A >= M      Z <- (A - M) == 0
-// // Flags Out:   N, C, Z
-// func cmp(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	var value byte = cpu.bus.CpuRead(address)
-
-// 	println("CMP Value = ", value, " CMP CPU.A = ", cpu.A)
-// 	cpu.setZ(cpu.A - value)
-// 	cpu.setN(cpu.A - value)
-// 	if cpu.A >= value {
-// 		cpu.C = 1
-// 	} else {
-// 		cpu.C = 0
-// 	}
-// }
-
-// // DEC - Decrement Memory
-// func dec(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	var decAddr byte = cpu.bus.CpuRead(address) - 1
-
-// 	cpu.bus.CpuWrite(address, decAddr)
-// 	cpu.setZ(decAddr)
-// 	cpu.setN(decAddr)
-// }
-
-// // INY - Increment Y Register
-// func iny(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.Y++
-// 	cpu.setZ(cpu.Y)
-// 	cpu.setN(cpu.Y)
-// }
-
-// // DEX - Decrement X Register
-// func dex(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.X--
-// 	cpu.setZ(cpu.X)
-// 	cpu.setN(cpu.X)
-// }
-
-// //branch if not equal
-// // Instruction: Branch if Not Equal
-// // Function:    if(Z == 0) pc = address
-// func bne(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	println("BNE CPU.Z = ", cpu.Z)
-// 	if cpu.Z == 0 {
-// 		cpu.PC = address
-// 		// adds a cycle for taking a branch and adds another cycle
-// 		// if the branch jumps to a new page
-// 		cpu.Cycles++
-// 		//addrAbs := pc + address
-
-// 		//if the two addresses reference different pages
-// 		if pagesDiffer(pc, address) {
-// 			cpu.Cycles++
-// 		}
-// 		//pc = addrAbs //Todo should i save the new addr ???
-// 	}
-// }
-
-// // Instruction: Clear decimal Flag
-// // Function:    D = 0
-// func cld(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.D = 0
-// }
-
-// // Instruction: Compare X Register
-// // Function:    C <- X >= M      Z <- (X - M) == 0
-// // Flags Out:   N, C, Z
-// func cpx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	var value byte = cpu.bus.CpuRead(address)
-
-// 	cpu.setZ(cpu.X - value)
-// 	cpu.setN(cpu.X - value)
-// 	if cpu.X >= value {
-// 		cpu.C = 1
-// 	} else {
-// 		cpu.C = 0
-// 	}
-// }
-
-// // INC - Increment Memory
-// func inc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	var incAddr byte = cpu.bus.CpuRead(address) + 1
-
-// 	cpu.bus.CpuWrite(address, incAddr)
-
-// 	cpu.setZ(incAddr)
-// 	cpu.setN(incAddr)
-// }
-
-// // INX - Increment X Register
-// func inx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.X++
-// 	cpu.setZ(cpu.X)
-// 	cpu.setN(cpu.X)
-// }
-
-// // Instruction: Subtraction with Borrow In
-// // Function:    A = A - M - (1 - C)
-// // Flags Out:   C, V, N, Z
-// //
-// // Explanation:
-// // Given the explanation for ADC above, we can reorganise our data
-// // to use the same computation for addition, for subtraction by multiplying
-// // the data by -1, i.e. make it negative
-// //
-// // A = A - M - (1 - C)  ->  A = A + -1 * (M - (1 - C))  ->  A = A + (-M + 1 + C)
-// //
-// // To make a signed positive number negative, we can invert the bits and add 1
-// // (OK, I lied, a little bit of 1 and 2s complement :P)
-// //
-// //  5 = 00000101
-// // -5 = 11111010 + 00000001 = 11111011 (or 251 in our 0 to 255 range)
-// //
-// // The range is actually unimportant, because if I take the value 15, and add 251
-// // to it, given we wrap around at 256, the result is 10, so it has effectively
-// // subtracted 5, which was the original intention. (15 + 251) % 256 = 10
-// //
-// // Note that the equation above used (1-C), but this got converted to + 1 + C.
-// // This means we already have the +1, so all we need to do is invert the bits
-// // of M, the data(!) therfore we can simply add, exactly the same way we did
-// // before.
-// func sbc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	// var a byte = cpu.A
-// 	// var m byte = cpu.bus.CpuRead(address)
-// 	// var c byte = cpu.C
-
-// 	// cpu.A += (-m + 1 + c)
-// 	// cpu.setZ(cpu.A)
-// 	// cpu.setN(cpu.A)
-// 	// if cpu.A > 0xFF {
-// 	// 	cpu.C = 1
-// 	// } else {
-// 	// 	cpu.C = 0
-// 	// }
-// 	// if (a^m)&0x80 == 0 && (a^cpu.A)&0x80 == 1 { //!= 0 {
-// 	// 	cpu.V = 1
-// 	// } else {
-// 	// 	cpu.V = 0
-// 	// }
-
-// 	a := cpu.A
-// 	b := cpu.bus.CpuRead(address)
-// 	c := cpu.C
-// 	cpu.A = a - b - (1 - c)
-// 	cpu.setZ(cpu.A)
-// 	cpu.setN(cpu.A)
-// 	if int(a)-int(b)-int(1-c) >= 0 {
-// 		cpu.C = 1
-// 	} else {
-// 		cpu.C = 0
-// 	}
-// 	if (a^b)&0x80 != 0 && (a^cpu.A)&0x80 != 0 {
-// 		cpu.V = 1
-// 	} else {
-// 		cpu.V = 0
-// 	}
-// }
-
-// //branch if equal
-// // Instruction: Branch if Equal
-// // Function:    if(Z == 1) pc = address
-// func beq(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	println("Z = ", cpu.Z)
-// 	if cpu.Z == 1 {
-// 		cpu.PC = address
-// 		// adds a cycle for taking a branch and adds another cycle
-// 		// if the branch jumps to a new page
-// 		cpu.Cycles++
-// 		//addrAbs := pc + address
-
-// 		//if the two addresses reference different pages
-// 		//if (addrAbs & 0xFF00) != (pc & 0xFF00) {
-// 		println("BEQ PC = ", pc, " BEQ ADDR = ", address)
-// 		if pagesDiffer(pc, address) {
-// 			cpu.Cycles++
-// 			println("ZEBIIIIII")
-// 		}
-// 		//os.Exit(9)
-// 		//pc = addrAbs //Todo should i save the new addr ???
-// 	}
-// }
-
-// // SED - Set Decimal Flag
-
-// func sed(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	cpu.D = 1
-// }
-
-// // BIT - Bit Test
-// func bit(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	value := cpu.bus.CpuRead(address)
-// 	cpu.V = (value >> 6) & 1
-// 	cpu.setZ(value & cpu.A)
-// 	cpu.setN(value)
-// }
-
-// // ASL - Arithmetic Shift Left
-// func asl(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-// 	if isAnAccumulator {
-// 		cpu.C = (cpu.A >> 7) & 1
-// 		cpu.A <<= 1
-// 		cpu.setZ(cpu.A)
-// 		cpu.setN(cpu.A)
-// 	} else {
-// 		var value byte = cpu.bus.CpuRead(address)
-
-// 		cpu.C = (value >> 7) & 1
-// 		value <<= 1
-// 		cpu.bus.CpuWrite(address, value)
-// 		cpu.setZ(value)
-// 		cpu.setN(value)
-// 	}
-
-// }
-
-// //________________________________________________________illegal opcodes below_____________________________________________________________________________________
-
-// func isc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
-// }
-
-// func kil(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
-// }
-
-// func slo(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
-// }
-
-// func nop(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
-// }
-
-// func dcp(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
-// }
-
-// func axs(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
-// }
-
-// func las(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
-// }
-
-// func lax(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
-// }
-
-// func shy(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
-// }
-
-// func shx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
-// }
-
-// func ahx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
-// }
-
-// func xaa(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
-// }
-
-// func sax(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
-// }
-
-// func rra(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
-// }
-// func arr(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
-// }
-// func sre(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
-// }
-
-// func alr(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
-// }
-// func anc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
-// }
-// func rla(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-
-// }
 
 // setZN sets the zero flag and the negative flag
 func (cpu *CPU) setZN(value byte) {
@@ -987,10 +216,13 @@ func (cpu *CPU) push(value byte) {
 
 // push16 pushes two bytes onto the stack
 func (cpu *CPU) push16(value uint16) {
-	hi := byte(value >> 8)
-	lo := byte(value & 0xFF)
-	cpu.push(hi)
-	cpu.push(lo)
+	//extract first bytes
+	high := byte(value >> 8)
+	//extract the seconde one
+	low := byte(value & 0xFF)
+	//push on the bus
+	cpu.push(high)
+	cpu.push(low)
 }
 
 func (cpu *CPU) compare(a, b byte) {
@@ -1005,6 +237,7 @@ func (cpu *CPU) compare(a, b byte) {
 // Flags returns the processor status flags
 func (cpu *CPU) Flags() byte {
 	var flags byte
+
 	flags |= cpu.C << 0
 	flags |= cpu.Z << 1
 	flags |= cpu.I << 2
@@ -1029,11 +262,9 @@ func (cpu *CPU) SetFlags(flags byte) {
 }
 
 // AND - Logical AND
+//this instruction is simply an 'and' logic gate
 func and(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	test := cpu.bus.CpuRead(address)
-	//println("ADDR TEST = ", test, " CPU.A = ", cpu.A)
-	cpu.A &= test
-	//cpu.A = cpu.A & cpu.bus.CpuRead(address)
+	cpu.A &= cpu.bus.CpuRead(address)
 	cpu.setZN(cpu.A)
 }
 
@@ -1044,7 +275,8 @@ func asl(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 		cpu.A <<= 1
 		cpu.setZN(cpu.A)
 	} else {
-		value := cpu.bus.CpuRead(address)
+		var value byte = cpu.bus.CpuRead(address)
+
 		cpu.C = (value >> 7) & 1
 		value <<= 1
 		cpu.bus.CpuWrite(address, value)
@@ -1061,8 +293,9 @@ func bcc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 }
 
 // BCS - Branch if Carry Set
+// Function:    if(C == 1) pc = address
 func bcs(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	if cpu.C != 0 {
+	if cpu.C == 1 {
 		cpu.PC = address
 		cpu.addBranchCycles(address, pc)
 	}
@@ -1070,7 +303,7 @@ func bcs(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 // BEQ - Branch if Equal
 func beq(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	if cpu.Z != 0 {
+	if cpu.Z == 1 {
 		cpu.PC = address
 		cpu.addBranchCycles(address, pc)
 	}
@@ -1078,21 +311,26 @@ func beq(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 // BIT - Bit Test
 func bit(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	value := cpu.bus.CpuRead(address)
+	var value byte = cpu.bus.CpuRead(address)
+
 	cpu.V = (value >> 6) & 1
 	cpu.setZ(value & cpu.A)
 	cpu.setN(value)
 }
 
 // BMI - Branch if Minus
+// Instruction: Branch if Negative
+// Function:    if(N == 1) pc = address
 func bmi(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	if cpu.N != 0 {
+	if cpu.N == 1 {
 		cpu.PC = address
 		cpu.addBranchCycles(address, pc)
 	}
 }
 
 // BNE - Branch if Not Equal
+// Instruction: Branch if Not Equal
+// Function:    if(Z == 0) pc = address
 func bne(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 	if cpu.Z == 0 {
 		cpu.PC = address
@@ -1101,6 +339,8 @@ func bne(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 }
 
 // BPL - Branch if Positive
+// Instruction: Branch if Positive
+// Function:    if(N == 0) pc = address
 func bpl(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 	if cpu.N == 0 {
 		cpu.PC = address
@@ -1109,6 +349,7 @@ func bpl(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 }
 
 // BRK - Force Interrupt
+// break instruction which means force interrupt
 func brk(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 	cpu.push16(cpu.PC)
 	php(cpu, address, pc, isAnAccumulator)
@@ -1117,6 +358,8 @@ func brk(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 }
 
 // BVC - Branch if Overflow Clear
+// Instruction: Branch if Overflow Clear
+// Function:    if(V == 0) pc = address
 func bvc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 	if cpu.V == 0 {
 		cpu.PC = address
@@ -1125,14 +368,17 @@ func bvc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 }
 
 // BVS - Branch if Overflow Set
+// Function:    if(V == 1) pc = address
 func bvs(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	if cpu.V != 0 {
+	if cpu.V == 1 {
 		cpu.PC = address
 		cpu.addBranchCycles(address, pc)
 	}
 }
 
 // CLC - Clear Carry Flag
+// Instruction: Clear Carry Flag
+// Function:    C = 0
 func clc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 	cpu.C = 0
 }
@@ -1143,37 +389,44 @@ func cld(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 }
 
 // CLI - Clear Interrupt Disable
+// Instruction: Disable Interrupts / Clear Interrupt Flag
+// Function:    I = 0
 func cli(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 	cpu.I = 0
 }
 
 // CLV - Clear Overflow Flag
+// Function:    V = 0
 func clv(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 	cpu.V = 0
 }
 
-// CMP - Compare
+// CMP - Compare the accumulator A
+// Function:    C <- A >= M      Z <- (A - M) == 0
+// Flags Out:   N, C, Z
 func cmp(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	value := cpu.bus.CpuRead(address)
-	//println("CMP Value = ", value, " CMP CPU.A = ", cpu.A)
-	cpu.compare(cpu.A, value)
+	cpu.compare(cpu.A, cpu.bus.CpuRead(address))
 }
 
 // CPX - Compare X Register
+// Function:    C <- X >= M      Z <- (X - M) == 0
+// Flags Out:   N, C, Z
 func cpx(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	value := cpu.bus.CpuRead(address)
-	cpu.compare(cpu.X, value)
+	cpu.compare(cpu.X, cpu.bus.CpuRead(address))
 }
 
 // CPY - Compare Y Register
+// Instruction: Compare Y Register
+// Function:    C <- Y >= M      Z <- (Y - M) == 0
+// Flags Out:   N, C, Z
 func cpy(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	value := cpu.bus.CpuRead(address)
-	cpu.compare(cpu.Y, value)
+	cpu.compare(cpu.Y, cpu.bus.CpuRead(address))
 }
 
 // DEC - Decrement Memory
 func dec(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	value := cpu.bus.CpuRead(address) - 1
+	var value byte = cpu.bus.CpuRead(address) - 1
+
 	cpu.bus.CpuWrite(address, value)
 	cpu.setZN(value)
 }
@@ -1191,14 +444,16 @@ func dey(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 }
 
 // EOR - Exclusive OR
+// instruction: xor gate on the accumulator
 func eor(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	cpu.A = cpu.A ^ cpu.bus.CpuRead(address)
+	cpu.A ^= cpu.bus.CpuRead(address)
 	cpu.setZN(cpu.A)
 }
 
 // INC - Increment Memory
 func inc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	value := cpu.bus.CpuRead(address) + 1
+	var value byte = cpu.bus.CpuRead(address) + 1
+
 	cpu.bus.CpuWrite(address, value)
 	cpu.setZN(value)
 }
@@ -1217,6 +472,8 @@ func iny(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 }
 
 // JMP - Jump
+// Instruction: Jump To Location
+// Function:    pc = address
 func jmp(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 	cpu.PC = address
 }
@@ -1252,7 +509,8 @@ func lsr(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 		cpu.A >>= 1
 		cpu.setZN(cpu.A)
 	} else {
-		value := cpu.bus.CpuRead(address)
+		var value byte = cpu.bus.CpuRead(address)
+
 		cpu.C = value & 1
 		value >>= 1
 		cpu.bus.CpuWrite(address, value)
@@ -1262,20 +520,27 @@ func lsr(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 // NOP - No Operation
 func nop(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	//the hardest instruction ;)
 }
 
 // ORA - Logical Inclusive OR
+// ORA - Logical Inclusive OR on the accumulator
 func ora(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	cpu.A = cpu.A | cpu.bus.CpuRead(address)
+	cpu.A |= cpu.bus.CpuRead(address)
 	cpu.setZN(cpu.A)
 }
 
 // PHA - Push Accumulator
+// Instruction: Push Accumulator to Stack
+// Function:    A -> stack write function allow me to access to the BUS
 func pha(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 	cpu.push(cpu.A)
 }
 
 // PHP - Push Processor Status
+// Instruction: Push Status Register to Stack
+// Function:    status -> stack
+// Note:        Break flag is set to 1 before push
 func php(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 	cpu.push(cpu.Flags() | 0x10)
 }
@@ -1293,16 +558,16 @@ func plp(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 // ROL - Rotate Left
 func rol(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	var tmp byte = cpu.C
+
 	if isAnAccumulator {
-		c := cpu.C
 		cpu.C = (cpu.A >> 7) & 1
-		cpu.A = (cpu.A << 1) | c
+		cpu.A = (cpu.A << 1) | tmp
 		cpu.setZN(cpu.A)
 	} else {
-		c := cpu.C
 		value := cpu.bus.CpuRead(address)
 		cpu.C = (value >> 7) & 1
-		value = (value << 1) | c
+		value = (value << 1) | tmp
 		cpu.bus.CpuWrite(address, value)
 		cpu.setZN(value)
 	}
@@ -1310,16 +575,16 @@ func rol(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 // ROR - Rotate Right
 func ror(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
+	var tmp byte = cpu.C
+
 	if isAnAccumulator {
-		c := cpu.C
 		cpu.C = cpu.A & 1
-		cpu.A = (cpu.A >> 1) | (c << 7)
+		cpu.A = (cpu.A >> 1) | (tmp << 7)
 		cpu.setZN(cpu.A)
 	} else {
-		c := cpu.C
 		value := cpu.bus.CpuRead(address)
 		cpu.C = value & 1
-		value = (value >> 1) | (c << 7)
+		value = (value >> 1) | (tmp << 7)
 		cpu.bus.CpuWrite(address, value)
 		cpu.setZN(value)
 	}
@@ -1337,18 +602,45 @@ func rts(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 }
 
 // SBC - Subtract with Carry
+// Instruction: Subtraction with Borrow In
+// Function:    A = A - M - (1 - C)
+// Flags Out:   C, V, N, Z
+//
+// Explanation:
+// Given the explanation for ADC above, we can reorganise our data
+// to use the same computation for addition, for subtraction by multiplying
+// the data by -1, i.e. make it negative
+//
+// A = A - M - (1 - C)  ->  A = A + -1 * (M - (1 - C))  ->  A = A + (-M + 1 + C)
+//
+// To make a signed positive number negative, we can invert the bits and add 1
+// (OK, I lied, a little bit of 1 and 2s complement :P)
+//
+//  5 = 00000101
+// -5 = 11111010 + 00000001 = 11111011 (or 251 in our 0 to 255 range)
+//
+// The range is actually unimportant, because if I take the value 15, and add 251
+// to it, given we wrap around at 256, the result is 10, so it has effectively
+// subtracted 5, which was the original intention. (15 + 251) % 256 = 10
+//
+// Note that the equation above used (1-C), but this got converted to + 1 + C.
+// This means we already have the +1, so all we need to do is invert the bits
+// of M, the data(!) therfore we can simply add, exactly the same way we did
+// before.
 func sbc(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	a := cpu.A
-	b := cpu.bus.CpuRead(address)
-	c := cpu.C
-	cpu.A = a - b - (1 - c)
+	var a byte = cpu.A
+	var m byte = cpu.bus.CpuRead(address)
+	var c byte = cpu.C
+
+	//cpu.A = a - m - (1 - c) == a + (m ^ 255) + c
+	cpu.A += (m ^ 255) + c
 	cpu.setZN(cpu.A)
-	if int(a)-int(b)-int(1-c) >= 0 {
+	if int(a)-int(m)-int(1-c) >= 0x0 {
 		cpu.C = 1
 	} else {
 		cpu.C = 0
 	}
-	if (a^b)&0x80 != 0 && (a^cpu.A)&0x80 != 0 {
+	if (a^m)&0x80 != 0 && (a^cpu.A)&0x80 != 0 {
 		cpu.V = 1
 	} else {
 		cpu.V = 0
@@ -1372,7 +664,6 @@ func sei(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
 
 // STA - Store Accumulator
 func sta(cpu *CPU, address uint16, pc uint16, isAnAccumulator bool) {
-	//println("STA CPU.A = ", cpu.A, " STA ADDR = ", address)
 	cpu.bus.CpuWrite(address, cpu.A)
 }
 
@@ -1500,6 +791,13 @@ func (cpu *CPU) setN(value byte) {
 	}
 }
 
+// interrupt types
+const (
+	interruptNone = iota + 1
+	interruptNMI
+	interruptIRQ
+)
+
 // addressing modes
 const (
 	modeAbsolute = iota + 1 //iota allow variable to work like enum in c "auto incrementation"
@@ -1518,6 +816,13 @@ const (
 )
 
 //OPCODE MATRIX look doc page 11
+//an opCode is composed of:
+// - instruction name
+// - instruction addr mode
+// - instruction size
+// - the number of cycles that the instruction take
+// - the number of page that the instruction take
+// - the function that exec the instruction
 type opCode struct {
 	instructionName string
 	instructionMode byte
@@ -1528,6 +833,7 @@ type opCode struct {
 }
 
 //this followed matrix shows the 210 op code (illegal/NOP are not counted) associated with the R65C00 family CPU devices.
+//enjoy ;)
 //map of instruction
 var opCodeMatrix = [256]opCode{
 	opCode{instructionName: "BRK", instructionMode: modeImplied, instructionSize: 2, nbCycle: 7, nbPageCycles: 0, instructionExec: brk}, opCode{instructionName: "ORA", instructionMode: modeIndexedIndirect, instructionSize: 2, nbCycle: 6, nbPageCycles: 0, instructionExec: ora}, opCode{instructionName: "KIL", instructionMode: modeImplied, instructionSize: 0, nbCycle: 2, nbPageCycles: 0, instructionExec: kil}, opCode{instructionName: "SLO", instructionMode: modeIndexedIndirect, instructionSize: 0, nbCycle: 8, nbPageCycles: 0, instructionExec: slo}, opCode{instructionName: "NOP", instructionMode: modeZeroPage, instructionSize: 2, nbCycle: 3, nbPageCycles: 0, instructionExec: nop}, opCode{instructionName: "ORA", instructionMode: modeZeroPage, instructionSize: 2, nbCycle: 3, nbPageCycles: 0, instructionExec: ora}, opCode{instructionName: "ASL", instructionMode: modeZeroPage, instructionSize: 2, nbCycle: 5, nbPageCycles: 0, instructionExec: asl}, opCode{instructionName: "SLO", instructionMode: modeZeroPage, instructionSize: 0, nbCycle: 5, nbPageCycles: 0, instructionExec: slo}, opCode{instructionName: "PHP", instructionMode: modeImplied, instructionSize: 1, nbCycle: 3, nbPageCycles: 0, instructionExec: php}, opCode{instructionName: "ORA", instructionMode: modeImmediate, instructionSize: 2, nbCycle: 2, nbPageCycles: 0, instructionExec: ora}, opCode{instructionName: "ASL", instructionMode: modeAccumulator, instructionSize: 1, nbCycle: 2, nbPageCycles: 0, instructionExec: asl}, opCode{instructionName: "ANC", instructionMode: modeImmediate, instructionSize: 0, nbCycle: 2, nbPageCycles: 0, instructionExec: anc}, opCode{instructionName: "NOP", instructionMode: modeAbsolute, instructionSize: 3, nbCycle: 4, nbPageCycles: 0, instructionExec: nop}, opCode{instructionName: "ORA", instructionMode: modeAbsolute, instructionSize: 3, nbCycle: 4, nbPageCycles: 0, instructionExec: ora}, opCode{instructionName: "ASL", instructionMode: modeAbsolute, instructionSize: 3, nbCycle: 6, nbPageCycles: 0, instructionExec: asl}, opCode{instructionName: "SLO", instructionMode: modeAbsolute, instructionSize: 0, nbCycle: 6, nbPageCycles: 0, instructionExec: slo},
@@ -1548,10 +854,8 @@ var opCodeMatrix = [256]opCode{
 	opCode{instructionName: "BEQ", instructionMode: modeRelative, instructionSize: 2, nbCycle: 2, nbPageCycles: 1, instructionExec: beq}, opCode{instructionName: "SBC", instructionMode: modeIndirectIndexed, instructionSize: 2, nbCycle: 5, nbPageCycles: 1, instructionExec: sbc}, opCode{instructionName: "KIL", instructionMode: modeImplied, instructionSize: 0, nbCycle: 2, nbPageCycles: 0, instructionExec: kil}, opCode{instructionName: "ISC", instructionMode: modeIndirectIndexed, instructionSize: 0, nbCycle: 8, nbPageCycles: 0, instructionExec: isc}, opCode{instructionName: "NOP", instructionMode: modeZeroPageX, instructionSize: 2, nbCycle: 4, nbPageCycles: 0, instructionExec: nop}, opCode{instructionName: "SBC", instructionMode: modeZeroPageX, instructionSize: 2, nbCycle: 4, nbPageCycles: 0, instructionExec: sbc}, opCode{instructionName: "INC", instructionMode: modeZeroPageX, instructionSize: 2, nbCycle: 6, nbPageCycles: 0, instructionExec: inc}, opCode{instructionName: "ISC", instructionMode: modeZeroPageX, instructionSize: 0, nbCycle: 6, nbPageCycles: 0, instructionExec: isc}, opCode{instructionName: "SED", instructionMode: modeImplied, instructionSize: 1, nbCycle: 2, nbPageCycles: 0, instructionExec: sed}, opCode{instructionName: "SBC", instructionMode: modeAbsoluteY, instructionSize: 3, nbCycle: 4, nbPageCycles: 1, instructionExec: sbc}, opCode{instructionName: "NOP", instructionMode: modeImplied, instructionSize: 1, nbCycle: 2, nbPageCycles: 0, instructionExec: nop}, opCode{instructionName: "ISC", instructionMode: modeAbsoluteY, instructionSize: 0, nbCycle: 7, nbPageCycles: 0, instructionExec: isc}, opCode{instructionName: "NOP", instructionMode: modeAbsoluteX, instructionSize: 3, nbCycle: 4, nbPageCycles: 1, instructionExec: nop}, opCode{instructionName: "SBC", instructionMode: modeAbsoluteX, instructionSize: 3, nbCycle: 4, nbPageCycles: 1, instructionExec: sbc}, opCode{instructionName: "INC", instructionMode: modeAbsoluteX, instructionSize: 3, nbCycle: 7, nbPageCycles: 0, instructionExec: inc}, opCode{instructionName: "ISC", instructionMode: modeAbsoluteX, instructionSize: 0, nbCycle: 7, nbPageCycles: 0, instructionExec: isc},
 }
 
-//THE CPU
-
+//CPU nes
 type CPU struct {
-	//Memory                      // memory interface
 	Cycles     uint64             // number of cycles
 	PC         uint16             // program counter
 	SP         byte               // stack pointer
@@ -1572,6 +876,7 @@ type CPU struct {
 	bus        *BUS               // Linkage to the communications bus
 }
 
+//map of addr mode constructor
 func createModesTables() map[byte]addrModes {
 	modes := map[byte]addrModes{
 		modeAbsolute:        abs,
@@ -1622,7 +927,6 @@ func (cpu *CPU) cpuInterruptions(interruptMode byte) {
 // triggerNMI causes a non-maskable interrupt to occur on the next cycle
 func (cpu *CPU) triggerNmi() {
 	cpu.interrupt = interruptNMI
-	//os.Exit(4)
 }
 
 // Reset resets the CPU to its initial powerup state
@@ -1632,25 +936,14 @@ func (cpu *CPU) reset() {
 	// Reset resets the CPU to its initial powerup state
 	cpu.SetFlags(0x24)
 	cpu.interrupt = interruptNone //tmp
-
-	// var flags byte = 0x24
-
-	// cpu.C = (flags >> 0) & 1
-	// cpu.Z = (flags >> 1) & 1
-	// cpu.I = (flags >> 2) & 1
-	// cpu.D = (flags >> 3) & 1
-	// cpu.B = (flags >> 4) & 1
-	// cpu.U = (flags >> 5) & 1
-	// cpu.V = (flags >> 6) & 1
-	// cpu.N = (flags >> 7) & 1
-	//cpu.Cycles = 0 // tmp
 }
 
-//init and create nes CPU
+//NewCpu function is the constructor of my CPU
 func NewCpu(bus *BUS) *CPU {
 	var cpu CPU = CPU{bus: bus}
 
 	cpu.modesTable = createModesTables()
+	// init cpu values by reseting the component. smart ;)
 	cpu.reset()
 	return &cpu
 }
@@ -1672,15 +965,19 @@ func (cpu *CPU) isPageCrossed(op opCode, address uint16) bool {
 }
 
 // PrintInstruction prints the current CPU state
+//VERY USEFUL for debugging trust me !!!
 func (cpu *CPU) PrintInstruction() {
 	opCodeIndex := cpu.bus.CpuRead(cpu.PC)
 	opcode := opCodeMatrix[opCodeIndex]
 	bytes := opcode.instructionSize
 	name := opcode.instructionName
+
+	println("-------------------------------------------------- ", cpu.Cycles, " --------------------------------------------------")
 	println("opcode.instructionName = ", opcode.instructionName, " opcode.instructionSize = ", opcode.instructionSize, " opcode.nbCycle = ", opcode.nbCycle, " opcode.nbPageCycles = ", opcode.nbPageCycles, "  opcode.instructionMode = ", opcode.instructionMode)
 	w0 := fmt.Sprintf("%02X", cpu.bus.CpuRead(cpu.PC+0))
 	w1 := fmt.Sprintf("%02X", cpu.bus.CpuRead(cpu.PC+1))
 	w2 := fmt.Sprintf("%02X", cpu.bus.CpuRead(cpu.PC+2))
+
 	if bytes < 2 {
 		w1 = "  "
 	}
@@ -1702,8 +999,10 @@ func (cpu *CPU) Step() uint64 {
 	}
 	var startNbCycles uint64 = cpu.Cycles
 
+	//check whether an Iterruption occur or not
 	cpu.cpuInterruptions(cpu.interrupt)
 	cpu.interrupt = interruptNone
+	//get the opcode
 	var opCodeIndex byte = cpu.bus.CpuRead(cpu.PC)
 	var op opCode = opCodeMatrix[opCodeIndex]
 	var isAnAccumulator bool = false
