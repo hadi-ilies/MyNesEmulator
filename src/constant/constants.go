@@ -11,7 +11,7 @@ const (
 //const of ui
 const (
 	UITitle      = "NES-EMULATOR"
-	WindowWidth  = 256
-	WindowHeight = 240
-	Scale        = 3
+	WindowWidth  = 800
+	WindowHeight = 600
+	Scale        = 1
 )
