@@ -10,21 +10,15 @@ import (
 	"github.com/hadi-ilies/MyNesEmulator/src/nes"
 )
 
+//GameView struct that reprensent the gameview
 type GameView struct {
 	nes     *nes.Nes
 	ui      *Ui // lol there is no inerittance in golang, I am a noob ':(
 	texture uint32
 	frames  []image.Image
-	record  bool // i am recording ?
-	// director *Director
-	// console  *nes.Console
-	// title    string
-	// hash     string
-	// texture  uint32
-	// record   bool
-	// frames   []image.Image
 }
 
+//NewGameView gameview constructor
 func NewGameView(ui *Ui, nes *nes.Nes) View {
 	var gameView GameView
 
@@ -78,9 +72,6 @@ func (gameView *GameView) Update(dt float64) {
 	// os.Exit(0)
 	gameView.drawBuffer(gameView.ui.GetWindow().GetFramebufferSize())
 	gl.BindTexture(gl.TEXTURE_2D, 0)
-	if gameView.record {
-		gameView.frames = append(gameView.frames, oglEncap.TakeScreenShot(gameView.nes.PixelBuffer()))
-	}
 }
 
 func (gameView *GameView) End() {
@@ -96,6 +87,7 @@ func (gameView *GameView) End() {
 	// view.console.SaveState(savePath(view.hash))
 }
 
+//will be useful when i will emulate controllers and physics interactions with my nes
 /** PRIVATE METHODS **/
 func (view *GameView) onKey(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 	if action == glfw.Press { // if key is pressed
@@ -104,14 +96,6 @@ func (view *GameView) onKey(window *glfw.Window, key glfw.Key, scancode int, act
 		//	screenshot(view.console.Buffer())
 		case glfw.KeyR: // if i pressed r key i will restart my nes
 			view.nes.Reset()
-		case glfw.KeyTab:
-			if view.record {
-				view.record = false
-				oglEncap.Record(view.frames)
-				view.frames = nil
-			} else {
-				view.record = true
-			}
 		}
 	}
 }
