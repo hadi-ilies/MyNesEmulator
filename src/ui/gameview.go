@@ -53,8 +53,6 @@ func (gameView *GameView) Update(dt float64) {
 	if dt > 1 {
 		dt = 0
 	}
-	//window := view.director.window
-	// console := view.console
 	// if joystickReset(glfw.Joystick1) {
 	// 	view.director.ShowMenu()
 	// }
@@ -64,7 +62,7 @@ func (gameView *GameView) Update(dt float64) {
 	// if readKey(window, glfw.KeyEscape) {
 	// 	view.director.ShowMenu()
 	// }
-	//updateControllers(window, console) todo code this func
+	updateControllers(gameView.ui.GetWindow(), gameView.nes) // todo code this func
 	gameView.nes.Run(dt)
 	gl.BindTexture(gl.TEXTURE_2D, gameView.texture)
 	oglEncap.SetTexture(gameView.nes.PixelBuffer()) //todo code the buffer
@@ -125,12 +123,32 @@ func (view *GameView) drawBuffer(bufferWidth int, bufferHeight int) {
 	gl.End()
 }
 
-//TODO
-// func updateControllers(window *glfw.Window, console *nes.Console) {
-// 	turbo := console.PPU.Frame%6 < 3
-// 	k1 := readKeys(window, turbo)
-// 	j1 := readJoystick(glfw.Joystick1, turbo)
-// 	j2 := readJoystick(glfw.Joystick2, turbo)
-// 	console.SetButtons1(combineButtons(k1, j1))
-// 	console.SetButtons2(j2)
-// }
+func readKey(window *glfw.Window, key glfw.Key) byte {
+	if (window.GetKey(key) == glfw.Press) == true {
+		return 0
+	}
+	return 1
+}
+
+func readKeys(window *glfw.Window) [8]byte {
+	var result [8]byte
+
+	result[nes.KeyA] = readKey(window, glfw.KeyA)
+	result[nes.KeyB] = readKey(window, glfw.KeyS)
+	result[nes.KeySelect] = readKey(window, glfw.KeyLeftShift)
+	result[nes.KeyStart] = readKey(window, glfw.KeyEnter)
+	result[nes.KeyUp] = readKey(window, glfw.KeyUp)
+	result[nes.KeyDown] = readKey(window, glfw.KeyDown)
+	result[nes.KeyLeft] = readKey(window, glfw.KeyLeft)
+	result[nes.KeyRight] = readKey(window, glfw.KeyRight)
+	// println()
+	// for _, value := range result {
+	// 	print(" ", value, " ")
+	// }
+	// println()
+	return result
+}
+
+func updateControllers(window *glfw.Window, nes *nes.Nes) {
+	nes.SetButtonToController(readKeys(window))
+}
