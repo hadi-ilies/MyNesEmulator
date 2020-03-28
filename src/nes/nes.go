@@ -56,3 +56,7 @@ func (nes *Nes) Run(seconds float64) {
 		cycles -= int(nes.Step())
 	}
 }
+
+func (nes *Nes) SetButtonToController(buttons [8]byte) {
+	nes.bus.Controller1.SetButtons(buttons)
+}
