@@ -30,14 +30,14 @@ func (controller *Controller) GetButton() [8]byte {
 }
 
 //SetButtons allow me to set buttons throught the ui
-func (controller *Controller) SetButtons(buttons [8]bool) {
+func (controller *Controller) SetButtons(buttons [8]byte) {
 	controller.buttons = buttons
 }
 
 func (controller *Controller) Read() byte {
 	var value byte = 0
 
-	if controller.index < 8 && controller.buttons[controller.index] {
+	if controller.index < 8 && controller.buttons[controller.index] == 0 {
 		value = 1
 	}
 	controller.index++
