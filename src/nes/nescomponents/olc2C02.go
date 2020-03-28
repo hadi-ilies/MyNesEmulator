@@ -3,7 +3,6 @@ package nescomponents
 import (
 	"image"
 	"log"
-	"os"
 )
 
 //NOTE: still dont get why it was not working check memo in ~/
@@ -468,7 +467,7 @@ func (ppu *PPU) evaluateSprites() {
 	if count > 8 {
 		count = 8
 		ppu.flagSpriteOverflow = true
-		os.Exit(99) // todo debug this it is not supposed to enter in this cond
+		//os.Exit(99) // todo debug this it is not supposed to enter in this cond
 	}
 	ppu.spriteCount = count
 }
