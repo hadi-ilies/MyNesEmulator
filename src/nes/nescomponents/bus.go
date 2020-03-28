@@ -18,11 +18,12 @@ type BUS struct {
 	cpuRam       [2048]byte //fake ram
 	ppu          *PPU
 	cartridge    *Cartridge
+	Controller1  *Controller
 	mapper       *Mapper
 	clockCounter uint //nb clock
 }
 
-//create bus
+//NewBus bus
 func NewBus(cartridge *Cartridge) *BUS {
 	var bus BUS
 
@@ -30,13 +31,14 @@ func NewBus(cartridge *Cartridge) *BUS {
 	bus.mapper = &cartridge.Mapper
 	bus.cpu = NewCpu(&bus)
 	bus.ppu = NewPpu(&bus)
+	bus.Controller1 = NewController()
 	//bus.clockCounter = 0
 	return &bus
 }
 
 //CpuWrite BUS handle the memory
 func (bus *BUS) CpuWrite(address uint16, data byte) {
-	if address >= 0 && address <= 0x1FFF { 	//8KB range
+	if address >= 0 && address <= 0x1FFF { //8KB range
 		bus.cpuRam[address%0x0800] = data
 	} else if address > 0x1FFF && address < 0x4000 {
 		bus.ppu.CpuWrite(0x2000+address%8, data)
@@ -47,7 +49,7 @@ func (bus *BUS) CpuWrite(address uint16, data byte) {
 	} else if address == 0x4015 {
 		//mem.console.APU.writeRegister(address, data)
 	} else if address == 0x4016 {
-		//mem.console.Controller1.Write data)
+		bus.Controller1.Write(data)
 		//mem.console.Controller2.Write data)
 	} else if address == 0x4017 {
 		//mem.console.APU.writeRegister(address, data)
@@ -59,11 +61,12 @@ func (bus *BUS) CpuWrite(address uint16, data byte) {
 		log.Fatalf("unhandled cpu memory write at address: 0x%04X", address)
 	}
 }
+
 //CpuRead BUS handle the memory
 func (bus *BUS) CpuRead(address uint16) byte {
 	var data byte = 0x00
 
-	if address >= 0 && address <= 0x1FFF { 	//8KB range
+	if address >= 0 && address <= 0x1FFF { //8KB range
 		data = bus.cpuRam[address%0x0800]
 	} else if address > 0x1FFF && address < 0x4000 {
 		data = bus.ppu.CpuRead(0x2000 + address%8)
@@ -72,7 +75,7 @@ func (bus *BUS) CpuRead(address uint16) byte {
 	} else if address == 0x4015 {
 		//data = mem.console.APU.readRegister(address)
 	} else if address == 0x4016 {
-		//data = mem.console.Controller1.Read()
+		data = bus.Controller1.Read()
 	} else if address == 0x4017 {
 		//data = mem.console.Controller2.Read()
 	} else if address < 0x6000 {
