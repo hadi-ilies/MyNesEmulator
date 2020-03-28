@@ -30,59 +30,25 @@ func NewGameView(ui *Ui, nes *nes.Nes) View {
 
 func (gameView *GameView) Start() {
 	gl.ClearColor(0, 0, 0, 1)
-	// view.director.SetTitle(view.title)
-	// view.console.SetAudioChannel(view.director.audio.channel)
-	// view.console.SetAudioSampleRate(view.director.audio.sampleRate)
+	//todo setTitle here
 	gameView.ui.GetWindow().SetKeyCallback(gameView.onKey) // todo getWindow can be removed
-	// load state
-	// if err := view.console.LoadState(savePath(view.hash)); err == nil {
-	// 	return
-	// } else {
-	gameView.nes.Reset() //init nes
-	// //}
-	// // load sram
-	//cartridge := gameView.nes.GetComponents().GetCartridge()
-	// if cartridge.Battery != 0 {
-	// 	if sram, err := readSRAM(sramPath(gameView.hash)); err == nil {
-	// 		cartridge.SRAM = sram
-	// 	}
-	// }
+	gameView.nes.Reset()                                   //init nes
 }
 
 func (gameView *GameView) Update(dt float64) {
 	if dt > 1 {
 		dt = 0
 	}
-	// if joystickReset(glfw.Joystick1) {
-	// 	view.director.ShowMenu()
-	// }
-	// if joystickReset(glfw.Joystick2) {
-	// 	view.director.ShowMenu()
-	// }
-	// if readKey(window, glfw.KeyEscape) {
-	// 	view.director.ShowMenu()
-	// }
 	updateControllers(gameView.ui.GetWindow(), gameView.nes) // todo code this func
 	gameView.nes.Run(dt)
 	gl.BindTexture(gl.TEXTURE_2D, gameView.texture)
 	oglEncap.SetTexture(gameView.nes.PixelBuffer()) //todo code the buffer
-	// println("VIEW")
-	// os.Exit(0)
 	gameView.drawBuffer(gameView.ui.GetWindow().GetFramebufferSize())
 	gl.BindTexture(gl.TEXTURE_2D, 0)
 }
 
 func (gameView *GameView) End() {
 	gameView.ui.GetWindow().SetKeyCallback(nil)
-	// view.console.SetAudioChannel(nil)
-	// view.console.SetAudioSampleRate(0)
-	// // save sram
-	// cartridge := view.console.Cartridge
-	// if cartridge.Battery != 0 {
-	// 	writeSRAM(sramPath(view.hash), cartridge.SRAM)
-	// }
-	// // save state
-	// view.console.SaveState(savePath(view.hash))
 }
 
 //will be useful when i will emulate controllers and physics interactions with my nes
@@ -90,8 +56,6 @@ func (gameView *GameView) End() {
 func (view *GameView) onKey(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 	if action == glfw.Press { // if key is pressed
 		switch key { //check which key has been pressed
-		//case glfw.KeySpace:
-		//	screenshot(view.console.Buffer())
 		case glfw.KeyR: // if i pressed r key i will restart my nes
 			view.nes.Reset()
 		}
