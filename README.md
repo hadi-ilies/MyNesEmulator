@@ -3,12 +3,12 @@
 
 ## Notes
 
-  * The work is in progress, the PPU/CPU are finished. I need to add the APU and Controllers.
-    All the documentations that I am using will be provided as soon as the project is finished ;) 
-  
-  * I actually have the mapper 001 alone. Therefore, only the roms that use it are accepted. 
+  * The work is in progress, the PPU/CPU and the controllers are finished. I need to add the APU
+    All the documentations that I am using will be provided as soon as the project is finished ;)
+
+  * I actually have the mapper 001 alone. Therefore, only the roms that use it are accepted.
     For instance Zelda 1, provided in the assets directory.
-    
+
     * PS: You can go take a look at "http://bootgod.dyndns.org:7777/profile.php?id=173" if you want to check which mapper your   rom uses.
 
 ## Dependencies
