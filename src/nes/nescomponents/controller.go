@@ -1,17 +1,5 @@
 package nescomponents
 
-//https://wiki.nesdev.com/w/index.php/Controller_reading_code
-const (
-	keyA = iota
-	keyB
-	keySelect
-	keyStart
-	keyUp
-	keyDown
-	keyLeft
-	keyRight
-)
-
 //Controller is a nes controller
 type Controller struct {
 	buttons [8]byte

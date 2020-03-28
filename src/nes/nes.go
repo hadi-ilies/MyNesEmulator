@@ -57,6 +57,19 @@ func (nes *Nes) Run(seconds float64) {
 	}
 }
 
+//https://wiki.nesdev.com/w/index.php/Controller_reading_code
+//???
+const (
+	KeyA = iota
+	KeyB
+	KeySelect
+	KeyStart
+	KeyUp
+	KeyDown
+	KeyLeft
+	KeyRight
+)
+
 func (nes *Nes) SetButtonToController(buttons [8]byte) {
 	nes.bus.Controller1.SetButtons(buttons)
 }
