@@ -1,6 +1,9 @@
 <h1 align="center">Welcome to MyNesEmulator 👋</h1>
   My first Golang project ! A basic Nintendo NES/FAMICOM emulator
 
+## Screenshot
+  ![Screenshots](https://i.imgur.com/KZyRYuf.png)
+
 ## Notes
 
   * The work is in progress, the PPU/CPU and the controllers are finished. I need to add the APU
